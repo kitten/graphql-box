@@ -20,8 +20,8 @@ export const nextOrNull = <T extends ObjectLike, K extends keyof T>(
 ): Promise<Entry<K, T[K]> | null> =>
   new Promise((resolve, reject) => {
     iter.next((err, key: K, value: T[K]) => {
-      if (err !== null) {
-        iter.close(() => reject(err));
+      if (err) {
+        iter.end(() => reject(err));
       } else if (key === undefined) {
         resolve(null);
       } else {
@@ -32,8 +32,8 @@ export const nextOrNull = <T extends ObjectLike, K extends keyof T>(
 
 export const closeIter = (iter: AbstractIterator<any, any>) =>
   new Promise((resolve, reject) => {
-    iter.close(err => {
-      if (err !== null) {
+    iter.end(err => {
+      if (err) {
         reject(err);
       } else {
         resolve();
