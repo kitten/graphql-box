@@ -1,0 +1,22 @@
+{
+  "include": ["src/**/*.ts"],
+  "compilerOptions": {
+    "typeRoots": ["./types/", "./node_modules/@types/"],
+    "rootDir": "src",
+    "outDir": "lib",
+    "lib": ["es6", "dom", "es2017.object"],
+    "noImplicitAny": false,
+    "noUnusedParameters": false,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "removeComments": true,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "target": "esnext",
+    // "module": "es2015",
+    "module": "commonjs",
+    "esModuleInterop": true
+  }
+}
