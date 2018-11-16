@@ -5,10 +5,13 @@ export interface MutexBatch {
 }
 
 export const mutexBatchFactory = (store: LevelUp): MutexBatch => {
-  let mutex: Promise<void>;
+  let mutex: void | Promise<void>;
 
   return async function mutexBatch(fn: (batch: LevelUpChain) => Promise<LevelUpChain>) {
-    await mutex;
+    if (mutex !== undefined) {
+      await mutex;
+    }
+
     await (mutex = (async () => {
       const batch = store.batch();
       try {
