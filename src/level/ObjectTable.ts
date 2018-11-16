@@ -4,11 +4,6 @@ import { getOrNull, nextObjectOrNull, sanitiseFields } from './helpers';
 import { genId, gen2DKey, gen3DKey, rangeOfKey } from './keys';
 import ObjectAsyncIterator from './ObjectAsyncIterator';
 
-const DEFAULT_ITER_OPTS = {
-  reverse: false,
-  limit: -1,
-};
-
 class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   name: string;
   fields: ObjectFieldDefinition<K>[];
@@ -25,7 +20,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     this.fieldsLength = this.fields.length;
   }
 
-  iterator({ reverse, limit }: IteratorOptions = DEFAULT_ITER_OPTS): ObjectAsyncIterator<T, K> {
+  iterator({ reverse = false, limit = -1 }: IteratorOptions): ObjectAsyncIterator<T, K> {
     const { store, name, fieldsLength, fieldNames } = this;
     const range = rangeOfKey(name);
     range.reverse = reverse;
