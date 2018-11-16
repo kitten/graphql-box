@@ -2,6 +2,7 @@ import { LevelUp, LevelUpChain } from 'levelup';
 import { ObjectLike, ObjectTableParams, ObjectFieldDefinition, IteratorOptions } from './types';
 import { getOrNull, nextObjectOrNull, closeIter, sanitiseFields } from './helpers';
 import { genId, gen2DKey, gen3DKey, rangeOfKey } from './keys';
+import { mutexBatchFactory, MutexBatch } from './mutexBatch';
 import ObjectFieldIndex from './ObjectFieldIndex';
 import AsyncObjectIterator from './AsyncObjectIterator';
 
@@ -14,11 +15,12 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   fieldsLength: number;
   store: LevelUp;
   index: FieldIndexMap<T>;
-  mutex?: Promise<any>;
+  mutexBatch: MutexBatch;
 
   constructor(params: ObjectTableParams<K>) {
     this.name = params.name;
     this.store = params.store;
+    this.mutexBatch = mutexBatchFactory(this.store);
     this.index = {} as FieldIndexMap<T>;
     this.fields = sanitiseFields<T, K>(params.fields);
     this.fieldsLength = this.fields.length;
@@ -33,19 +35,6 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
 
       return x.name;
     });
-  }
-
-  async mutexBatch(fn: (batch: LevelUpChain) => Promise<LevelUpChain>): Promise<void> {
-    await this.mutex;
-    await (this.mutex = (async () => {
-      const batch = this.store.batch();
-      try {
-        await fn(batch);
-        await batch.write();
-      } finally {
-        this.mutex = undefined;
-      }
-    })());
   }
 
   iterator({ reverse = false, limit = -1 }: IteratorOptions = {}): AsyncObjectIterator<T, K> {
