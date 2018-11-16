@@ -20,7 +20,11 @@
     ]
   },
   "jest": {
-    "preset": "ts-jest"
+    "preset": "ts-jest",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/lib/"
+    ]
   },
   "dependencies": {
     "cuid": "^2.1.4",
