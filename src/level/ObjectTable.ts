@@ -14,6 +14,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   fieldsLength: number;
   store: LevelUp;
   index: FieldIndexMap<T>;
+  mutex?: Promise<any>;
 
   constructor(params: ObjectTableParams<K>) {
     this.name = params.name;
@@ -32,6 +33,22 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
 
       return x.name;
     });
+  }
+
+  async mutexBatch(fn: (batch: LevelUpChain) => Promise<LevelUpChain>): Promise<void> {
+    if (this.mutex !== undefined) {
+      await this.mutex;
+    }
+
+    await (this.mutex = (async () => {
+      const batch = this.store.batch();
+      try {
+        await fn(batch);
+        await batch.write();
+      } finally {
+        this.mutex = undefined;
+      }
+    })());
   }
 
   iterator({ reverse = false, limit = -1 }: IteratorOptions = {}): AsyncObjectIterator<T, K> {
@@ -76,7 +93,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     return firstId;
   }
 
-  async indexObject(data: Partial<T>, batch: LevelUpChain): Promise<LevelUpChain> {
+  async indexObject(id: string, data: Partial<T>, batch: LevelUpChain): Promise<LevelUpChain> {
     let nextBatch = batch;
     for (const fieldName in data) {
       const index = this.index[fieldName];
@@ -93,16 +110,15 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     data.id = id;
     data.createdAt = data.updatedAt = new Date().valueOf();
 
-    let batch = this.store.batch();
-    batch = await this.indexObject(data, batch);
-    batch = this.fields.reduce((batch, { name, defaultValue, isUnique }) => {
-      const key = gen3DKey(this.name, id, name);
-      const value = data[name];
-      const shouldDefault = !!defaultValue && value === null;
-      return batch.put(key, shouldDefault ? defaultValue : value);
-    }, batch);
+    await this.mutexBatch(async batch => {
+      return this.fields.reduce((batch, { name, defaultValue }) => {
+        const key = gen3DKey(this.name, id, name);
+        const value = data[name];
+        const shouldDefault = !!defaultValue && value === null;
+        return batch.put(key, shouldDefault ? defaultValue : value);
+      }, await this.indexObject(id, data, batch));
+    });
 
-    await batch.write();
     return data as T;
   }
 }

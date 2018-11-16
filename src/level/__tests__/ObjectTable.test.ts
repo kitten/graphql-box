@@ -85,7 +85,7 @@ describe('level/ObjectTable', () => {
   });
 
   it('can iterate over created objects', async () => {
-    const data = [{ test: 'x' }, { test: 'x' }, { test: 'x' }];
+    const data = [{ test: 'x' }, { test: 'y' }, { test: 'z' }];
 
     await Promise.all(data.map(x => table.createObject(x)));
 
@@ -95,7 +95,7 @@ describe('level/ObjectTable', () => {
         id: expect.any(String),
         createdAt: expect.any(Number),
         updatedAt: expect.any(Number),
-        test: 'x',
+        test: expect.any(String),
       });
 
       size++;
@@ -105,7 +105,7 @@ describe('level/ObjectTable', () => {
   });
 
   it('can iterate and abort early', async () => {
-    const data = [{ test: 'x' }, { test: 'x' }, { test: 'x' }];
+    const data = [{ test: 'x' }, { test: 'y' }, { test: 'z' }];
 
     await Promise.all(data.map(x => table.createObject(x)));
 
@@ -114,7 +114,7 @@ describe('level/ObjectTable', () => {
         id: expect.any(String),
         createdAt: expect.any(Number),
         updatedAt: expect.any(Number),
-        test: 'x',
+        test: expect.any(String),
       });
 
       break;
