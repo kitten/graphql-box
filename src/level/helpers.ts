@@ -51,6 +51,24 @@ export const objectOfFields = <T, K extends keyof T>(keys: K[], vals: T[K][]): T
   return res;
 };
 
+export const nextObjectOrNull = async <T extends ObjectLike, K extends keyof T>(
+  keys: K[],
+  iter: AbstractIterator<K, T[K]>
+): Promise<T | null> => {
+  const res = {} as T;
+
+  for (let i = 0, s = keys.length; i < s; i++) {
+    const entry = await nextOrNull<T, K>(iter);
+    if (entry === null) {
+      return null;
+    } else {
+      res[keys[i]] = entry[1];
+    }
+  }
+
+  return res;
+};
+
 export const sanitiseFields = <T extends ObjectLike, K extends keyof T>(
   fields: ObjectFieldDefinition<K>[]
 ) => {

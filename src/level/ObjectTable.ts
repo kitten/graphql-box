@@ -1,6 +1,6 @@
 import { LevelUp } from 'levelup';
 import { ObjectLike, ObjectTableParams, ObjectFieldDefinition, IteratorOptions } from './types';
-import { getOrNull, objectOfFields, sanitiseFields, nextOrNull } from './helpers';
+import { getOrNull, nextObjectOrNull, sanitiseFields } from './helpers';
 import { genId, gen2DKey, gen3DKey, rangeOfKey } from './keys';
 import ObjectAsyncIterator from './ObjectAsyncIterator';
 
@@ -29,7 +29,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     const range = rangeOfKey(this.name);
     range.reverse = reverse;
     range.limit = limit > 0 ? limit * this.fieldsLength : limit;
-    return new ObjectAsyncIterator<T, K>(this.name, this.store.iterator(range));
+    return new ObjectAsyncIterator<T, K>(this.name, this.fieldNames, this.store.iterator(range));
   }
 
   getField(id: string, fieldName: K): Promise<T[K] | null> {
@@ -37,21 +37,10 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     return getOrNull<T[K]>(this.store, key);
   }
 
-  async getObject(id: string) {
+  getObject(id: string) {
     const range = rangeOfKey(gen2DKey(this.name, id));
     const iterator = this.store.iterator(range);
-    const values: T[K][] = new Array(this.fieldsLength);
-
-    for (let i = 0, s = this.fieldsLength; i < s; i++) {
-      const res = await nextOrNull<T, K>(iterator);
-      if (res === null) {
-        return null;
-      } else {
-        values[i] = res[1];
-      }
-    }
-
-    return objectOfFields(this.fieldNames, values);
+    return nextObjectOrNull<T, K>(this.fieldNames, iterator);
   }
 
   async createObject(data: Partial<T>) {

@@ -1,37 +1,30 @@
 import { AbstractIterator } from 'abstract-leveldown';
-import { ObjectLike, Entry } from './types';
-import { nextOrNull, closeIter } from './helpers';
-import { idOfKey, fieldOfKey } from './keys';
+import { ObjectLike } from './types';
+import { nextObjectOrNull, closeIter } from './helpers';
 
 class ObjectAsyncIterator<T extends ObjectLike, K extends keyof T>
   implements AsyncIterableIterator<T> {
-  iterator: AbstractIterator<K, T[K]>;
-  active: boolean;
   name: string;
-  entry?: null | Entry<K, T[K]>;
+  fieldNames: K[];
+  iterator: AbstractIterator<K, T[K]>;
+  done: boolean;
 
-  constructor(name: string, iterator: AbstractIterator<K, T[K]>) {
+  constructor(name: string, fieldNames: K[], iterator: AbstractIterator<K, T[K]>) {
     this.name = name;
-    this.active = true;
+    this.fieldNames = fieldNames;
     this.iterator = iterator;
+    this.done = false;
   }
 
   async next(): Promise<IteratorResult<T>> {
-    if (!this.active) {
+    if (this.done) {
       return { done: true } as IteratorResult<T>;
-    } else if (this.entry === undefined) {
-      this.entry = await nextOrNull<T, K>(this.iterator);
     }
 
-    const { name } = this;
-    const id = idOfKey(name, this.entry[0]);
-    const value = {} as T;
-
-    do {
-      const fieldName = fieldOfKey(name, this.entry[0]);
-      value[fieldName] = this.entry[1];
-      this.entry = await nextOrNull<T, K>(this.iterator);
-    } while ((this.active = this.entry !== null) && idOfKey(name, this.entry[0]) === id);
+    const value = await nextObjectOrNull<T, K>(this.fieldNames, this.iterator);
+    if (value === null) {
+      return { done: this.done = true } as any;
+    }
 
     return { done: false, value };
   }
