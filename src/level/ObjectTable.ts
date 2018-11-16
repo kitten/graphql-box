@@ -1,8 +1,11 @@
-import { LevelUp } from 'levelup';
+import { LevelUp, LevelUpChain } from 'levelup';
 import { ObjectLike, ObjectTableParams, ObjectFieldDefinition, IteratorOptions } from './types';
 import { getOrNull, nextObjectOrNull, closeIter, sanitiseFields } from './helpers';
 import { genId, gen2DKey, gen3DKey, rangeOfKey } from './keys';
-import ObjectAsyncIterator from './ObjectAsyncIterator';
+import ObjectFieldIndex from './ObjectFieldIndex';
+import AsyncObjectIterator from './AsyncObjectIterator';
+
+type FieldIndexMap<T extends ObjectLike> = { [K in keyof T]?: ObjectFieldIndex<T[K], K> };
 
 class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   name: string;
@@ -10,23 +13,34 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   fieldNames: K[];
   fieldsLength: number;
   store: LevelUp;
+  index: FieldIndexMap<T>;
 
   constructor(params: ObjectTableParams<K>) {
     this.name = params.name;
     this.store = params.store;
-
+    this.index = {} as FieldIndexMap<T>;
     this.fields = sanitiseFields<T, K>(params.fields);
-    this.fieldNames = this.fields.map(x => x.name);
     this.fieldsLength = this.fields.length;
+    this.fieldNames = this.fields.map(x => {
+      if (x.isUnique) {
+        this.index[x.name] = new ObjectFieldIndex<T[K], K>({
+          typeName: this.name,
+          fieldName: x.name,
+          store: this.store,
+        });
+      }
+
+      return x.name;
+    });
   }
 
-  iterator({ reverse = false, limit = -1 }: IteratorOptions = {}): ObjectAsyncIterator<T, K> {
+  iterator({ reverse = false, limit = -1 }: IteratorOptions = {}): AsyncObjectIterator<T, K> {
     const { store, name, fieldsLength, fieldNames } = this;
     const range = rangeOfKey(name);
     range.reverse = reverse;
     range.limit = limit > 0 ? limit * fieldsLength : limit;
     const iterator = store.iterator(range);
-    return new ObjectAsyncIterator<T, K>(name, fieldNames, iterator);
+    return new AsyncObjectIterator<T, K>(name, fieldNames, iterator);
   }
 
   getField(id: string, fieldName: K): Promise<T[K] | null> {
@@ -42,16 +56,50 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     return res;
   }
 
+  async getByIndex(data: Partial<T>): Promise<string | null> {
+    let firstId;
+    for (const fieldName in data) {
+      const index = this.index[fieldName];
+      if (index !== undefined) {
+        const value = data[fieldName];
+        const id = await index.lookup(value);
+
+        if (id === null || (firstId !== undefined && firstId !== id)) {
+          return null;
+        } else {
+          firstId = id;
+        }
+      }
+    }
+
+    return firstId;
+  }
+
+  async indexObject(data: Partial<T>, batch: LevelUpChain): Promise<LevelUpChain> {
+    let nextBatch = batch;
+    for (const fieldName in data) {
+      const index = this.index[fieldName];
+      if (index !== undefined) {
+        nextBatch = await index.index(data[fieldName], data.id, nextBatch);
+      }
+    }
+
+    return nextBatch;
+  }
+
   async createObject(data: Partial<T>): Promise<T> {
-    data.id = genId();
+    const id = genId();
+    data.id = id;
     data.createdAt = data.updatedAt = new Date().valueOf();
 
-    const batch = this.fields.reduce((batch, { name, defaultValue }) => {
-      const key = gen3DKey(this.name, data.id, name);
+    let batch = this.store.batch();
+    batch = await this.indexObject(data, batch);
+    batch = this.fields.reduce((batch, { name, defaultValue, isUnique }) => {
+      const key = gen3DKey(this.name, id, name);
       const value = data[name];
-      const shouldDefault = defaultValue !== null && value === null;
+      const shouldDefault = !!defaultValue && value === null;
       return batch.put(key, shouldDefault ? defaultValue : value);
-    }, this.store.batch());
+    }, batch);
 
     await batch.write();
     return data as T;

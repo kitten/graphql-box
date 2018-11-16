@@ -14,7 +14,7 @@ type Test = {
 
 const name = 'Test';
 
-const fields = [{ name: 'test', index: false, writeable: true }] as any;
+const fields = [{ name: 'test', isUnique: true, isReadOnly: false }] as any;
 
 describe('level/ObjectTable', () => {
   let store: LevelUp;

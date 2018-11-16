@@ -2,7 +2,7 @@ import { AbstractIterator } from 'abstract-leveldown';
 import { ObjectLike } from './types';
 import { nextObjectOrNull, closeIter } from './helpers';
 
-class ObjectAsyncIterator<T extends ObjectLike, K extends keyof T>
+class AsyncObjectIterator<T extends ObjectLike, K extends keyof T>
   implements AsyncIterableIterator<T> {
   name: string;
   fieldNames: K[];
@@ -39,4 +39,4 @@ class ObjectAsyncIterator<T extends ObjectLike, K extends keyof T>
   }
 }
 
-export default ObjectAsyncIterator;
+export default AsyncObjectIterator;

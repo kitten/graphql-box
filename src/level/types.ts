@@ -2,7 +2,7 @@ import { LevelUp } from 'levelup';
 
 export interface ObjectFieldDefinition<K> {
   name: K;
-  defaultValue: string | number | null;
+  defaultValue?: string | number | null;
   isUnique: boolean;
   isReadOnly: boolean;
 }
@@ -10,6 +10,12 @@ export interface ObjectFieldDefinition<K> {
 export interface ObjectTableParams<K> {
   name: string;
   fields: ObjectFieldDefinition<any>[];
+  store: LevelUp;
+}
+
+export interface ObjectFieldIndexParams<K> {
+  typeName: string;
+  fieldName: K;
   store: LevelUp;
 }
 
