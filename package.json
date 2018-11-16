@@ -30,8 +30,7 @@
     "cuid": "^2.1.4",
     "encoding-down": "^5.0.4",
     "levelup": "^3.1.1",
-    "prisma-generate-schema": "^1.20.4",
-    "uuid": "^3.3.2"
+    "prisma-generate-schema": "^1.20.4"
   },
   "devDependencies": {
     "@types/abstract-leveldown": "^5.0.1",
@@ -40,9 +39,7 @@
     "@types/graphql": "^14.0.3",
     "@types/jest": "^23.3.9",
     "@types/memdown": "^3.0.0",
-    "@types/uuid": "^3.4.4",
     "graphql": "^14.0.2",
-    "graphql-tag": "^2.10.0",
     "jest": "^23.6.0",
     "lint-staged": "^8.0.4",
     "memdown": "^3.0.0",
