@@ -109,7 +109,7 @@ describe('level/ObjectTable', () => {
 
     await Promise.all(data.map(x => table.createObject(x)));
 
-    for await (const item of table.iterator()) {
+    for await (const item of table.iterator({})) {
       expect(item).toEqual({
         id: expect.any(String),
         createdAt: expect.any(Number),

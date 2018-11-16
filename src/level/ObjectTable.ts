@@ -20,7 +20,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     this.fieldsLength = this.fields.length;
   }
 
-  iterator({ reverse = false, limit = -1 }: IteratorOptions): ObjectAsyncIterator<T, K> {
+  iterator({ reverse = false, limit = -1 }: IteratorOptions = {}): ObjectAsyncIterator<T, K> {
     const { store, name, fieldsLength, fieldNames } = this;
     const range = rangeOfKey(name);
     range.reverse = reverse;
@@ -44,9 +44,11 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     data.id = genId();
     data.createdAt = data.updatedAt = new Date().valueOf();
 
-    const batch = this.fieldNames.reduce((batch, fieldName) => {
-      const key = gen3DKey(this.name, data.id, fieldName);
-      return batch.put(key, data[fieldName]);
+    const batch = this.fields.reduce((batch, { name, defaultValue }) => {
+      const key = gen3DKey(this.name, data.id, name);
+      const value = data[name];
+      const shouldDefault = defaultValue !== null && value === null;
+      return batch.put(key, shouldDefault ? defaultValue : value);
     }, this.store.batch());
 
     await batch.write();

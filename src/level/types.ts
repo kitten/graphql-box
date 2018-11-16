@@ -2,8 +2,9 @@ import { LevelUp } from 'levelup';
 
 export interface ObjectFieldDefinition<K> {
   name: K;
-  index: boolean;
-  writeable: boolean;
+  defaultValue: string | number | null;
+  isUnique: boolean;
+  isReadOnly: boolean;
 }
 
 export interface ObjectTableParams<K> {
