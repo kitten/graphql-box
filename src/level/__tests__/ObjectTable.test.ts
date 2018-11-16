@@ -103,4 +103,21 @@ describe('level/ObjectTable', () => {
 
     expect(size).toBe(data.length);
   });
+
+  it('can iterate and abort early', async () => {
+    const data = [{ test: 'x' }, { test: 'x' }, { test: 'x' }];
+
+    await Promise.all(data.map(x => table.createObject(x)));
+
+    for await (const item of table.iterator()) {
+      expect(item).toEqual({
+        id: expect.any(String),
+        createdAt: expect.any(Number),
+        updatedAt: expect.any(Number),
+        test: 'x',
+      });
+
+      break;
+    }
+  });
 });
