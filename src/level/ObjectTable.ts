@@ -26,10 +26,12 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   }
 
   iterator({ reverse, limit }: IteratorOptions = DEFAULT_ITER_OPTS): ObjectAsyncIterator<T, K> {
-    const range = rangeOfKey(this.name);
+    const { store, name, fieldsLength, fieldNames } = this;
+    const range = rangeOfKey(name);
     range.reverse = reverse;
-    range.limit = limit > 0 ? limit * this.fieldsLength : limit;
-    return new ObjectAsyncIterator<T, K>(this.name, this.fieldNames, this.store.iterator(range));
+    range.limit = limit > 0 ? limit * fieldsLength : limit;
+    const iterator = store.iterator(range);
+    return new ObjectAsyncIterator<T, K>(name, fieldNames, iterator);
   }
 
   getField(id: string, fieldName: K): Promise<T[K] | null> {
