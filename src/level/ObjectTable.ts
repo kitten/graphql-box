@@ -9,7 +9,7 @@ const DEFAULT_ITER_OPTS = {
   limit: -1,
 };
 
-class ObjectTable<T extends ObjectLike, K extends keyof T> {
+class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   name: string;
   fields: ObjectFieldDefinition<K>[];
   fieldNames: K[];
@@ -21,7 +21,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T> {
     this.store = params.store;
 
     this.fields = sanitiseFields<T, K>(params.fields);
-    this.fieldNames = params.fields.map(x => x.name);
+    this.fieldNames = this.fields.map(x => x.name);
     this.fieldsLength = this.fields.length;
   }
 
@@ -56,7 +56,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T> {
 
   async createObject(data: Partial<T>) {
     data.id = genId();
-    data.createdAt = new Date().valueOf();
+    data.createdAt = data.updatedAt = new Date().valueOf();
 
     const batch = this.fieldNames.reduce((batch, fieldName) => {
       const key = gen3DKey(this.name, data.id, fieldName);

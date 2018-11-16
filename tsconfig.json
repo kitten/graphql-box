@@ -4,7 +4,7 @@
     "typeRoots": ["./types/", "./node_modules/@types/"],
     "rootDir": "src",
     "outDir": "lib",
-    "lib": ["es6", "dom", "es2017.object"],
+    "lib": ["es6", "dom", "es2017.object", "esnext"],
     "noImplicitAny": false,
     "noUnusedParameters": false,
     "noUnusedLocals": true,

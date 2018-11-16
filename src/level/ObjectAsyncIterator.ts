@@ -23,21 +23,22 @@ class ObjectAsyncIterator<T extends ObjectLike, K extends keyof T>
       this.entry = await nextOrNull<T, K>(this.iterator);
     }
 
-    const { name, entry } = this;
-    const id = idOfKey(name, entry[0]);
+    const { name } = this;
+    const id = idOfKey(name, this.entry[0]);
     const value = {} as T;
 
     do {
-      const fieldName = fieldOfKey(name, entry[0]);
-      value[fieldName] = entry[1];
+      const fieldName = fieldOfKey(name, this.entry[0]);
+      value[fieldName] = this.entry[1];
       this.entry = await nextOrNull<T, K>(this.iterator);
-    } while ((this.active = entry !== null) && idOfKey(name, entry[0]) === id);
+    } while ((this.active = this.entry !== null) && idOfKey(name, this.entry[0]) === id);
 
-    return { done: !this.active, value };
+    return { done: false, value };
   }
 
-  return() {
-    return closeIter(this.iterator);
+  async return() {
+    await closeIter(this.iterator);
+    return { done: true } as IteratorResult<T>;
   }
 
   [Symbol.asyncIterator]() {
