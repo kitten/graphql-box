@@ -84,6 +84,12 @@ describe('level/ObjectTable', () => {
     });
   });
 
+  it('can store then retrieve IDs by indexed values', async () => {
+    const expected = await table.createObject({ test: 'test-1' });
+    const actualId = await table.getIdByIndex({ test: 'test-1' });
+    expect(actualId).toEqual(expected.id);
+  });
+
   it('can iterate over created objects', async () => {
     const data = [{ test: 'x' }, { test: 'y' }, { test: 'z' }];
 

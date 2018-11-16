@@ -36,10 +36,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   }
 
   async mutexBatch(fn: (batch: LevelUpChain) => Promise<LevelUpChain>): Promise<void> {
-    if (this.mutex !== undefined) {
-      await this.mutex;
-    }
-
+    await this.mutex;
     await (this.mutex = (async () => {
       const batch = this.store.batch();
       try {
@@ -73,7 +70,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     return res;
   }
 
-  async getByIndex(data: Partial<T>): Promise<string | null> {
+  async getIdByIndex(data: Partial<T>): Promise<string | null> {
     let firstId = data.id;
 
     for (const fieldName in data) {
