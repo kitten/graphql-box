@@ -45,7 +45,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     return nextObjectOrNull<T, K>(this.fieldNames, iterator);
   }
 
-  async createObject(data: Partial<T>) {
+  async createObject(data: Partial<T>): Promise<T> {
     data.id = genId();
     data.createdAt = data.updatedAt = new Date().valueOf();
 
@@ -55,7 +55,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     }, this.store.batch());
 
     await batch.write();
-    return data;
+    return data as T;
   }
 }
 
