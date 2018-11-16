@@ -9,7 +9,7 @@ export interface ObjectFieldDefinition<K> {
 
 export interface ObjectTableParams<K> {
   name: string;
-  fields: ObjectFieldDefinition<K>[];
+  fields: ObjectFieldDefinition<any>[];
   store: LevelUp;
 }
 

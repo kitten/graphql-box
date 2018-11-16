@@ -1,6 +1,6 @@
 import { LevelUp } from 'levelup';
 import { ObjectLike, ObjectTableParams, ObjectFieldDefinition, IteratorOptions } from './types';
-import { getOrNull, nextObjectOrNull, sanitiseFields } from './helpers';
+import { getOrNull, nextObjectOrNull, closeIter, sanitiseFields } from './helpers';
 import { genId, gen2DKey, gen3DKey, rangeOfKey } from './keys';
 import ObjectAsyncIterator from './ObjectAsyncIterator';
 
@@ -34,10 +34,12 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     return getOrNull<T[K]>(this.store, key);
   }
 
-  getObject(id: string) {
+  async getObject(id: string) {
     const range = rangeOfKey(gen2DKey(this.name, id));
     const iterator = this.store.iterator(range);
-    return nextObjectOrNull<T, K>(this.fieldNames, iterator);
+    const res = await nextObjectOrNull<T, K>(this.fieldNames, iterator);
+    await closeIter(iterator);
+    return res;
   }
 
   async createObject(data: Partial<T>): Promise<T> {
