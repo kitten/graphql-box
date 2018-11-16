@@ -28,7 +28,7 @@ class ObjectFieldIndex<T, K> {
       throw new Error(`Duplicate index value on "${key}"`);
     }
 
-    return batch.put(key, value);
+    return batch.put(key, id);
   }
 }
 
