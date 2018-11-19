@@ -60,7 +60,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   }
 
   async getIdByIndex(data: Partial<T>): Promise<string | null> {
-    let firstId = data.id;
+    let firstId = data.id || null;
 
     for (const fieldName in data) {
       const index = this.index[fieldName];
@@ -68,7 +68,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
         const value = data[fieldName];
         const id = await index.lookup(value);
 
-        if (id === null || (firstId !== undefined && firstId !== id)) {
+        if (id === null || (firstId !== null && firstId !== id)) {
           return null;
         } else {
           firstId = id;

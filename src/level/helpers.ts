@@ -77,9 +77,11 @@ export const sanitiseFields = <T extends ObjectLike, K extends keyof T>(
   });
 
   const withSystemFields = [
-    { name: 'id', index: false, writeable: false },
-    { name: 'createdAt', index: false, writeable: false },
-    { name: 'updatedAt', index: false, writeable: false },
+    // id is marked as non-unique here, however, that's simply to prevent
+    // it from being indexed unnecessarily
+    { name: 'id', isUnique: false, isReadOnly: true },
+    { name: 'createdAt', isUnique: false, isReadOnly: true },
+    { name: 'updatedAt', isUnique: false, isReadOnly: true },
     ...sparseFields,
   ].sort((a, b) => {
     if (a.name < b.name) {
