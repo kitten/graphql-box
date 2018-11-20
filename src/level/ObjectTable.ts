@@ -59,13 +59,13 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     return res;
   }
 
-  async getIdByIndex(data: Partial<T>): Promise<string | null> {
-    let firstId = data.id || null;
+  async getIdByIndex(where: Partial<T>): Promise<string | null> {
+    let firstId = where.id || null;
 
-    for (const fieldName in data) {
+    for (const fieldName in where) {
       const index = this.index[fieldName];
       if (index !== undefined) {
-        const value = data[fieldName];
+        const value = where[fieldName];
         const id = await index.lookup(value);
 
         if (id === null || (firstId !== null && firstId !== id)) {
@@ -106,6 +106,30 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     });
 
     return data as T;
+  }
+
+  async updateObject(where: Partial<T>, data: Partial<T>): Promise<T> {
+    const id = await this.getIdByIndex(where);
+    if (id === null) {
+      throw new Error('No object has been found to update');
+    }
+
+    data.updatedAt = new Date().valueOf();
+
+    await this.mutexBatch(async batch => {
+      return this.fields.reduce((batch, { name, defaultValue, isReadOnly }) => {
+        if (isReadOnly || !data.hasOwnProperty(name)) {
+          return batch;
+        }
+
+        const key = gen3DKey(this.name, id, name);
+        const value = data[name];
+        const shouldDefault = !!defaultValue && value === null;
+        return batch.put(key, shouldDefault ? defaultValue : value);
+      }, batch);
+    });
+
+    return await this.getObject(id);
   }
 }
 
