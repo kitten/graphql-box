@@ -1,4 +1,4 @@
-import { LevelUp, LevelUpChain } from 'levelup';
+import { LevelUp } from 'levelup';
 import { ObjectLike, ObjectTableParams, ObjectFieldDefinition, IteratorOptions } from './types';
 import { getOrNull, nextObjectOrNull, closeIter, sanitiseFields } from './helpers';
 import { genId, gen2DKey, gen3DKey, rangeOfKey } from './keys';
@@ -79,30 +79,25 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     return firstId;
   }
 
-  async indexObject(id: string, data: Partial<T>, batch: LevelUpChain): Promise<LevelUpChain> {
-    let nextBatch = batch;
-    for (const fieldName in data) {
-      const index = this.index[fieldName];
-      if (index !== undefined) {
-        nextBatch = await index.index(data[fieldName], data.id, nextBatch);
-      }
-    }
-
-    return nextBatch;
-  }
-
   async createObject(data: Partial<T>): Promise<T> {
-    const id = genId();
-    data.id = id;
+    const id = (data.id = genId());
     data.createdAt = data.updatedAt = new Date().valueOf();
 
-    await this.mutexBatch(async batch => {
-      return this.fields.reduce((batch, { name, defaultValue }) => {
-        const key = gen3DKey(this.name, id, name);
-        const value = data[name];
-        const shouldDefault = !!defaultValue && value === null;
-        return batch.put(key, shouldDefault ? defaultValue : value);
-      }, await this.indexObject(id, data, batch));
+    await this.mutexBatch(async b => {
+      let batch = b;
+      for (const { name, defaultValue } of this.fields) {
+        const index = this.index[name];
+        const input = data[name];
+        const shouldDefault = !!defaultValue && input === null;
+        const value = (shouldDefault ? defaultValue : input) as T[K];
+
+        batch = batch.put(gen3DKey(this.name, id, name), value);
+        if (index !== undefined) {
+          batch = await index.index(value, id, batch);
+        }
+      }
+
+      return batch;
     });
 
     return data as T;
@@ -114,22 +109,56 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
       throw new Error('No object has been found to update');
     }
 
+    const prev = await this.getObject(id);
     data.updatedAt = new Date().valueOf();
 
-    await this.mutexBatch(async batch => {
-      return this.fields.reduce((batch, { name, defaultValue, isReadOnly }) => {
+    await this.mutexBatch(async b => {
+      let batch = b;
+      for (const { name, defaultValue, isReadOnly } of this.fields) {
         if (isReadOnly || !data.hasOwnProperty(name)) {
-          return batch;
-        }
+          data[name] = prev[name];
+        } else {
+          const index = this.index[name];
+          const input = data[name];
+          const shouldDefault = !!defaultValue && input === null;
+          const value = (shouldDefault ? defaultValue : input) as T[K];
 
-        const key = gen3DKey(this.name, id, name);
-        const value = data[name];
-        const shouldDefault = !!defaultValue && value === null;
-        return batch.put(key, shouldDefault ? defaultValue : value);
-      }, batch);
+          batch = batch.put(gen3DKey(this.name, id, name), value);
+          if (index !== undefined) {
+            const prevVal = prev[name];
+            batch = await index.reindex(prevVal, value, id, batch);
+          }
+        }
+      }
+
+      return batch;
     });
 
-    return await this.getObject(id);
+    return data as T;
+  }
+
+  async deleteObject(where: Partial<T>): Promise<T> {
+    const id = await this.getIdByIndex(where);
+    if (id === null) {
+      throw new Error('No object has been found to delete');
+    }
+
+    const data = await this.getObject(id);
+
+    await this.mutexBatch(async b => {
+      let batch = b;
+      for (const { name } of this.fields) {
+        batch = batch.del(gen3DKey(this.name, id, name));
+        const index = this.index[name];
+        if (index !== undefined) {
+          batch = index.unindex(data[name], id, batch);
+        }
+      }
+
+      return batch;
+    });
+
+    return data;
   }
 }
 
