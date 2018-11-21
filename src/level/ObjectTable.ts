@@ -60,7 +60,10 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   }
 
   async getIdByIndex(where: Partial<T>): Promise<string | null> {
-    let firstId = where.id || null;
+    let firstId = null;
+    if (where.id !== null) {
+      firstId = await this.getField(where.id, 'id' as K);
+    }
 
     for (const fieldName in where) {
       const index = this.index[fieldName];

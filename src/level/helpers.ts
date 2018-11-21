@@ -81,7 +81,7 @@ export const sanitiseFields = <T extends ObjectLike, K extends keyof T>(
     // it from being indexed unnecessarily
     { name: 'id', isUnique: false, isReadOnly: true },
     { name: 'createdAt', isUnique: false, isReadOnly: true },
-    { name: 'updatedAt', isUnique: false, isReadOnly: true },
+    { name: 'updatedAt', isUnique: false, isReadOnly: false },
     ...sparseFields,
   ].sort((a, b) => {
     if (a.name < b.name) {
