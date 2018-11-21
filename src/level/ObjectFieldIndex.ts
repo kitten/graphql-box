@@ -17,11 +17,28 @@ class ObjectFieldIndex<T, K> {
   }
 
   lookup(value: T): Promise<string | null> {
+    if (value === null) {
+      return null;
+    }
+
     const key = gen3DKey(this.typeName, this.fieldName, value);
     return getOrNull<ID>(this.store, key);
   }
 
-  async index(value: T, id: ID, batch: LevelUpChain) {
+  unindex(value: T, id: ID, batch: LevelUpChain): LevelUpChain {
+    if (value === null) {
+      return batch;
+    }
+
+    const key = gen3DKey(this.typeName, this.fieldName, value);
+    return batch.del(key);
+  }
+
+  async index(value: T, id: ID, batch: LevelUpChain): Promise<LevelUpChain> {
+    if (value === null) {
+      return batch;
+    }
+
     const key = gen3DKey(this.typeName, this.fieldName, value);
     const hasPrev = (await getOrNull<ID>(this.store, key)) !== null;
     if (hasPrev) {
@@ -29,6 +46,10 @@ class ObjectFieldIndex<T, K> {
     }
 
     return batch.put(key, id);
+  }
+
+  async reindex(prev: T, value: T, id: ID, batch: LevelUpChain): Promise<LevelUpChain> {
+    return this.unindex(prev, id, await this.index(value, id, batch));
   }
 }
 
