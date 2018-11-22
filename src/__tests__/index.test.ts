@@ -1,6 +1,5 @@
 import { graphql, GraphQLSchema } from 'graphql';
-import levelup, { LevelUp } from 'levelup';
-import encode from 'encoding-down';
+import { AbstractLevelDOWN } from 'abstract-leveldown';
 import memdown from 'memdown';
 
 import { makeExecutableSchema } from '../index';
@@ -14,11 +13,11 @@ const sdl = `
 `;
 
 describe('makeExecutableSchema', () => {
-  let store: LevelUp;
+  let store: AbstractLevelDOWN;
   let schema: GraphQLSchema;
 
   beforeEach(() => {
-    store = levelup(encode(memdown(), { keyEncoding: 'none', valueEncoding: 'json' }));
+    store = memdown();
     schema = makeExecutableSchema(sdl, store);
   });
 

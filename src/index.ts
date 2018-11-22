@@ -1,5 +1,8 @@
 import { GraphQLSchema, GraphQLObjectType } from 'graphql/type';
-import { LevelUp } from 'levelup';
+import { AbstractLevelDOWN } from 'abstract-leveldown';
+import levelup from 'levelup';
+import encode from 'encoding-down';
+
 import { ObjectSchema } from './schema/types';
 import { parseInternalTypes } from './schema/parse';
 import { schemaForObject } from './schema/object';
@@ -9,7 +12,8 @@ const defaultProtoSchema = (): ObjectSchema => ({
   mutation: {},
 });
 
-export const makeExecutableSchema = (sdl: string, store: LevelUp) => {
+export const makeExecutableSchema = (sdl: string, leveldown: AbstractLevelDOWN) => {
+  const store = levelup(encode(leveldown, { keyEncoding: 'none', valueEncoding: 'json' }));
   const internalTypes = parseInternalTypes(sdl);
 
   const protoSchema = internalTypes.reduce((acc, obj) => {
