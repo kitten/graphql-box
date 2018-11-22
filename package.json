@@ -13,7 +13,7 @@
     "demo": "micro scripts/demo.js",
     "bundle": "microbundle build --no-sourcemap --target web",
     "build": "tsc -m commonjs",
-    "clean": "rimraf ./*.{map,js,mjs} ./*.d.ts ./level ./schema ./__tests__ ./.rts2_cache*",
+    "clean": "rimraf ./*.{map,js,mjs} ./*.d.ts ./relational ./utils ./level ./schema ./__tests__ ./.rts2_cache*",
     "test": "jest",
     "lint-staged": "lint-staged",
     "prepublishOnly": "run-p build bundle"
