@@ -105,29 +105,76 @@ describe('makeExecutableSchema', () => {
         await graphql(
           schema,
           `
-        {
-          commit(where: { id: "${id}" }) {
-            id
-            hash
-            message
-          }
-        }
-      `
+            {
+              commit(where: { id: "${id}" }) {
+                id, hash, message
+              }
+            }
+          `
         )
       ).toEqual(expected);
+
+      expect(
+        await graphql(schema, `{ commit(where: { hash: "${hash}" }) { id, hash, message } }`)
+      ).toEqual(expected);
+    });
+
+    it('supports creating items, updating, and retrieving them', async () => {
+      const {
+        data: { createCommit },
+      } = await graphql(
+        schema,
+        `
+          mutation {
+            createCommit(data: { hash: "dc6dff6", message: "Initial Commit" }) {
+              id
+              hash
+              message
+            }
+          }
+        `
+      );
+
+      const {
+        data: { updateCommit },
+      } = await graphql(
+        schema,
+        `
+          mutation {
+            updateCommit(where: { hash: "dc6dff6" }, data: { hash: "1111111" }) {
+              id
+              hash
+              message
+            }
+          }
+        `
+      );
+
+      expect(updateCommit.id).toBe(createCommit.id);
+      expect(updateCommit.message).toBe(createCommit.message);
+
+      const expected = {
+        data: {
+          commit: {
+            id: createCommit.id,
+            hash: updateCommit.hash,
+            message: 'Initial Commit',
+          },
+        },
+      };
 
       expect(
         await graphql(
           schema,
           `
-        {
-          commit(where: { hash: "${hash}" }) {
-            id
-            hash
-            message
-          }
-        }
-      `
+            {
+              commit(where: { hash: "1111111" }) {
+                id
+                hash
+                message
+              }
+            }
+          `
         )
       ).toEqual(expected);
     });

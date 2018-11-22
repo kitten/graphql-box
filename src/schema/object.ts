@@ -8,6 +8,7 @@ export const schemaForObject = ({ obj, store }: SchemaParams): ObjectSchema => {
   const fieldMap = gen.genFieldMap(obj);
   const objectType = gen.genObjectType(names, obj, fieldMap);
   const createInput = gen.genCreateInput(names, obj);
+  const updateInput = gen.genUpdateInput(names, obj);
   const uniqueWhereInput = gen.genUniqueWhereInput(names, obj);
 
   const table = new ObjectTable({
@@ -38,6 +39,14 @@ export const schemaForObject = ({ obj, store }: SchemaParams): ObjectSchema => {
         type: objectType,
         args: { data: { type: gen.nonNull(createInput) } },
         resolve: (_, { data }) => table.createObject(data),
+      },
+      [`update${names.typeName}`]: {
+        type: objectType,
+        args: {
+          where: { type: gen.nonNull(uniqueWhereInput) },
+          data: { type: gen.nonNull(updateInput) },
+        },
+        resolve: (_, { where, data }) => table.updateObject(where, data),
       },
     },
   };

@@ -100,7 +100,7 @@ export const genObjectType = (
 };
 
 export const genCreateInput = (names: ObjectNames, obj: IGQLType): GraphQLInputObjectType => {
-  const inputName = `${names.typeName}CreateInput`;
+  const inputName = `${names.typeName}Create`;
   const fieldMap: GraphQLInputFieldConfigMap = {};
 
   for (const field of obj.fields) {
@@ -110,6 +110,30 @@ export const genCreateInput = (names: ObjectNames, obj: IGQLType): GraphQLInputO
       if (typeof field.type === 'string') {
         const scalar = getScalarForString(field.type);
         fieldMap[name] = genInputField(name, scalar, { isList, isRequired });
+      } else {
+        // TODO
+        throw new Error('Relationships in SDL types are currently unsupported');
+      }
+    }
+  }
+
+  return new GraphQLInputObjectType({
+    name: inputName,
+    fields: fieldMap,
+  });
+};
+
+export const genUpdateInput = (names: ObjectNames, obj: IGQLType): GraphQLInputObjectType => {
+  const inputName = `${names.typeName}Update`;
+  const fieldMap: GraphQLInputFieldConfigMap = {};
+
+  for (const field of obj.fields) {
+    const { name, isReadOnly, isList } = field;
+
+    if (!isReadOnly) {
+      if (typeof field.type === 'string') {
+        const scalar = getScalarForString(field.type);
+        fieldMap[name] = genInputField(name, scalar, { isList });
       } else {
         // TODO
         throw new Error('Relationships in SDL types are currently unsupported');
