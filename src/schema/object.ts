@@ -48,6 +48,13 @@ export const schemaForObject = ({ obj, store }: SchemaParams): ObjectSchema => {
         },
         resolve: (_, { where, data }) => table.updateObject(where, data),
       },
+      [`delete${names.typeName}`]: {
+        type: objectType,
+        args: {
+          where: { type: gen.nonNull(uniqueWhereInput) },
+        },
+        resolve: (_, { where, data }) => table.deleteObject(where),
+      },
     },
   };
 };
