@@ -3,6 +3,7 @@ import { GraphQLDateTime } from 'graphql-iso-date';
 import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
 
 import {
+  getNullableType,
   GraphQLInputFieldConfigMap,
   GraphQLInputFieldConfig,
   GraphQLFieldConfigMap,
@@ -19,7 +20,7 @@ import {
 import { ObjectNames } from './names';
 
 export const list = x => new GraphQLList(x);
-export const nonNull = x => new GraphQLNonNull(x);
+export const nonNull = x => new GraphQLNonNull(getNullableType(x));
 
 export const getScalarForString = (scalarType: string) => {
   const scalar = specifiedScalarTypes.find(x => x.name === scalarType);
@@ -65,7 +66,7 @@ export const genFieldMap = (obj: IGQLType): GraphQLFieldConfigMap<any, any> => {
     const { name, isList, isRequired } = field;
 
     if (field.isId) {
-      fieldMap.id = genField('id', idScalar, {});
+      fieldMap.id = genField('id', idScalar, { isRequired: true });
     } else if (name === 'createdAt' || name === 'updatedAt') {
       fieldMap[name] = genField(name, timestampScalar, { isRequired: true });
     } else if (typeof field.type === 'string') {
