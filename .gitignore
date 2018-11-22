@@ -16,3 +16,4 @@ dist
 *.js.map
 *.tgz
 !types/*.d.ts
+!scripts/*.js
