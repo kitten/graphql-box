@@ -17,32 +17,11 @@ import {
   GraphQLInputObjectType,
 } from 'graphql/type';
 
+import { getScalarForString } from './scalars';
 import { ObjectNames } from './names';
 
-export const list = x => new GraphQLList(x);
-export const nonNull = x => new GraphQLNonNull(getNullableType(x));
-
-export const getScalarForString = (scalarType: string) => {
-  switch (scalarType) {
-    case 'Date':
-      return getNullableType(GraphQLDate);
-    case 'Time':
-      return getNullableType(GraphQLTime);
-    case 'DateTime':
-      return getNullableType(GraphQLDateTime);
-    case 'ID':
-      return getNullableType(GraphQLID);
-    default: {
-      const scalar = specifiedScalarTypes.find(x => x.name === scalarType);
-      if (scalar === undefined) {
-        throw new Error(`Unspecified scalar type "${scalarType}" found`);
-      }
-
-      return scalar;
-    }
-  }
-};
-
+const nonNull = x => new GraphQLNonNull(getNullableType(x));
+const list = x => new GraphQLList(nonNull(x));
 const idScalar = nonNull(GraphQLID);
 const timestampScalar = nonNull(GraphQLDateTime);
 
