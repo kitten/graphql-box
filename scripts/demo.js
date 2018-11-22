@@ -1,6 +1,4 @@
 const { ApolloServer } = require('apollo-server-micro');
-const levelup = require('levelup');
-const encode = require('encoding-down');
 const memdown = require('memdown');
 
 const { makeExecutableSchema } = require('../index');
@@ -19,8 +17,7 @@ type File {
 }
 `;
 
-const store = levelup(encode(memdown(), { keyEncoding: 'none', valueEncoding: 'json' }));
-const schema = makeExecutableSchema(sdl, store);
+const schema = makeExecutableSchema(sdl, memdown());
 
 const apolloServer = new ApolloServer({ schema, tracing: true });
 module.exports = apolloServer.createHandler();
