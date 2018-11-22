@@ -1,5 +1,5 @@
 import { specifiedScalarTypes } from 'graphql/type/scalars';
-import { GraphQLDateTime } from 'graphql-iso-date';
+import { GraphQLDate, GraphQLTime, GraphQLDateTime } from 'graphql-iso-date';
 import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
 
 import {
@@ -23,12 +23,24 @@ export const list = x => new GraphQLList(x);
 export const nonNull = x => new GraphQLNonNull(getNullableType(x));
 
 export const getScalarForString = (scalarType: string) => {
-  const scalar = specifiedScalarTypes.find(x => x.name === scalarType);
-  if (scalar === undefined) {
-    throw new Error(`Unspecified scalar type "${scalarType}" found`);
-  }
+  switch (scalarType) {
+    case 'Date':
+      return getNullableType(GraphQLDate);
+    case 'Time':
+      return getNullableType(GraphQLTime);
+    case 'DateTime':
+      return getNullableType(GraphQLDateTime);
+    case 'ID':
+      return getNullableType(GraphQLID);
+    default: {
+      const scalar = specifiedScalarTypes.find(x => x.name === scalarType);
+      if (scalar === undefined) {
+        throw new Error(`Unspecified scalar type "${scalarType}" found`);
+      }
 
-  return scalar;
+      return scalar;
+    }
+  }
 };
 
 const idScalar = nonNull(GraphQLID);
