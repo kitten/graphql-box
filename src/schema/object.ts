@@ -24,14 +24,7 @@ export const schemaForObject = ({ obj, store }: SchemaParams): ObjectSchema => {
         args: {
           where: { type: gen.nonNull(uniqueWhereInput) },
         },
-        resolve: async (_, { where }) => {
-          const id = await table.getIdByIndex(where);
-          if (id === null) {
-            return null;
-          }
-
-          return await table.getObject(id);
-        },
+        resolve: async (_, { where }) => table.findObjectByIndex(where),
       },
     },
     mutation: {

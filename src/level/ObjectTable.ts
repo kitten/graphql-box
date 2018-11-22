@@ -82,6 +82,15 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     return firstId;
   }
 
+  async findObjectByIndex(where: Partial<T>): Promise<T | null> {
+    const id = await this.getIdByIndex(where);
+    if (id === null) {
+      return null;
+    }
+
+    return await this.getObject(id);
+  }
+
   async createObject(data: Partial<T>): Promise<T> {
     const id = (data.id = genId());
     data.createdAt = data.updatedAt = new Date().valueOf();
