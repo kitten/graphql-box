@@ -1,16 +1,20 @@
 {
-  "name": "graphql-local-idb",
-  "version": "0.1.0",
+  "name": "gqlvl",
+  "version": "0.1.0-alpha.0",
   "description": "Create a local GraphQL ORM backed by IndexedDB",
-  "main": "index.js",
+  "main": "gqlvl.js",
+  "module": "gqlvl.mjs",
+  "umd:main": "gqlvl.umd.js",
+  "source": "src/index.ts",
   "repository": "https://github.com/kitten/graphql-local-idb",
   "author": "Phil Pluckthun <phil@kitten.sh>",
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
+    "bundle": "microbundle build --no-sourcemap --target web",
+    "build": "tsc -m commonjs",
     "test": "jest",
-    "lint-staged": "lint-staged"
+    "lint-staged": "lint-staged",
+    "prepublishOnly": "run-p build bundle"
   },
   "pre-commit": "lint-staged",
   "lint-staged": {
@@ -28,10 +32,12 @@
   },
   "dependencies": {
     "cuid": "^2.1.4",
-    "encoding-down": "^5.0.4",
     "graphql-iso-date": "^3.6.1",
     "levelup": "^3.1.1",
     "prisma-generate-schema": "^1.20.4"
+  },
+  "peerDependencies": {
+    "graphql": "^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0"
   },
   "devDependencies": {
     "@types/abstract-leveldown": "^5.0.1",
@@ -41,10 +47,12 @@
     "@types/graphql-iso-date": "^3.3.1",
     "@types/jest": "^23.3.9",
     "@types/memdown": "^3.0.0",
+    "encoding-down": "^5.0.4",
     "graphql": "^14.0.2",
     "jest": "^23.6.0",
     "lint-staged": "^8.0.4",
     "memdown": "^3.0.0",
+    "microbundle": "^0.7.0",
     "npm-run-all": "^4.1.3",
     "pre-commit": "^1.2.2",
     "prettier": "^1.15.2",

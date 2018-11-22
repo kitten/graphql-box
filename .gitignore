@@ -3,4 +3,16 @@
 *.pid
 *.seed
 node_modules
+
+.rts2_cache_*
 lib
+dist
+*.d.ts
+*.mjs
+*.mjs.map
+*.d.ts.map
+*.umd.js
+*.js
+*.js.map
+*.tgz
+!types/*.d.ts

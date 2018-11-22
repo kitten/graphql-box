@@ -1,9 +1,10 @@
 {
   "include": ["src/**/*.ts"],
+  "exclude": [],
   "compilerOptions": {
     "typeRoots": ["./types/", "./node_modules/@types/"],
     "rootDir": "src",
-    "outDir": "lib",
+    "outDir": ".",
     "lib": ["es6", "dom", "es2017.object", "esnext"],
     "noImplicitAny": false,
     "noUnusedParameters": false,
@@ -11,12 +12,12 @@
     "skipLibCheck": true,
     "moduleResolution": "node",
     "removeComments": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "declaration": true,
     "declarationMap": true,
     "target": "esnext",
-    // "module": "es2015",
-    "module": "commonjs",
+    // "module": "commonjs",
+    "module": "esnext",
     "esModuleInterop": true
   }
 }

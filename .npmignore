@@ -1,0 +1,10 @@
+/.*
+*.log
+*.tgz
+*.map
+types/
+__tests__
+tsconfig.json
+src
+dist
+lib
