@@ -118,7 +118,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     await this.mutexBatch(async b => {
       let batch = b;
       for (const { name, defaultValue, isReadOnly } of this.fields) {
-        if (isReadOnly || !data.hasOwnProperty(name)) {
+        if (isReadOnly || !(name in data)) {
           data[name] = prev[name];
         } else {
           const index = this.index[name];
