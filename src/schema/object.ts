@@ -7,6 +7,7 @@ export const schemaForObject = ({ obj, store }: SchemaParams): ObjectSchema => {
   const names = genObjectNames(obj);
   const fieldMap = gen.genFieldMap(obj);
   const objectType = gen.genObjectType(names, obj, fieldMap);
+  const createInput = gen.genCreateInput(names, obj);
   const uniqueWhereInput = gen.genUniqueWhereInput(names, obj);
 
   const table = new ObjectTable({
@@ -19,15 +20,24 @@ export const schemaForObject = ({ obj, store }: SchemaParams): ObjectSchema => {
     query: {
       [names.singleName]: {
         type: objectType,
-        args: { input: { type: uniqueWhereInput } },
-        resolve: async (_, { input }) => {
-          const id = await table.getIdByIndex(input);
+        args: {
+          where: { type: gen.nonNull(uniqueWhereInput) },
+        },
+        resolve: async (_, { where }) => {
+          const id = await table.getIdByIndex(where);
           if (id === null) {
             return null;
           }
 
           return await table.getObject(id);
         },
+      },
+    },
+    mutation: {
+      [`create${names.typeName}`]: {
+        type: objectType,
+        args: { data: { type: gen.nonNull(createInput) } },
+        resolve: (_, { data }) => table.createObject(data),
       },
     },
   };

@@ -18,7 +18,9 @@ import {
 
 import { ObjectNames } from './names';
 
-const getScalarForString = (scalarType: string) => {
+export const nonNull = x => new GraphQLNonNull(x);
+
+export const getScalarForString = (scalarType: string) => {
   const scalar = specifiedScalarTypes.find(x => x.name === scalarType);
   if (scalar === undefined) {
     throw new Error(`Unspecified scalar type "${scalarType}" found`);
@@ -27,8 +29,8 @@ const getScalarForString = (scalarType: string) => {
   return scalar;
 };
 
-const idScalar = new GraphQLNonNull(GraphQLID);
-const timestampScalar = new GraphQLNonNull(GraphQLDateTime);
+const idScalar = nonNull(GraphQLID);
+const timestampScalar = nonNull(GraphQLDateTime);
 
 const genField = (name: string, type: GraphQLOutputType): GraphQLFieldConfig<any, any> => ({
   type,
@@ -51,7 +53,7 @@ export const genFieldMap = (obj: IGQLType): GraphQLFieldConfigMap<any, any> => {
     } else if (typeof field.type === 'string') {
       const scalar = getScalarForString(field.type);
       const maybeList = field.isList ? new GraphQLList(scalar) : scalar;
-      const outputType = field.isRequired ? new GraphQLNonNull(maybeList) : maybeList;
+      const outputType = field.isRequired ? nonNull(maybeList) : maybeList;
       fieldMap[name] = genField(name, outputType);
     } else {
       // TODO
@@ -76,6 +78,28 @@ export const genObjectType = (
 
   return new GraphQLObjectType({
     name: names.typeName,
+    fields: fieldMap,
+  });
+};
+
+export const genCreateInput = (names: ObjectNames, obj: IGQLType): GraphQLInputObjectType => {
+  const inputName = `${names.typeName}CreateInput`;
+  const fieldMap: GraphQLInputFieldConfigMap = {};
+
+  for (const field of obj.fields) {
+    const { name } = field;
+
+    if (name !== 'createdAt' && name !== 'updatedAt' && typeof field.type === 'string') {
+      const scalar = getScalarForString(field.type);
+      fieldMap[name] = genInputField(name, scalar);
+    } else {
+      // TODO
+      throw new Error('Relationships in SDL types are currently unsupported');
+    }
+  }
+
+  return new GraphQLInputObjectType({
+    name: inputName,
     fields: fieldMap,
   });
 };

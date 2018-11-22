@@ -9,5 +9,5 @@ export interface SchemaParams {
 
 export interface ObjectSchema {
   query: GraphQLFieldConfigMap<any, any>;
-  // mutation: GraphQLFieldConfigMap<any, any>;
+  mutation: GraphQLFieldConfigMap<any, any>;
 }
