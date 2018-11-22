@@ -1,4 +1,4 @@
-import { graphql, GraphQLError, GraphQLSchema } from 'graphql';
+import { graphql, GraphQLSchema } from 'graphql';
 import levelup, { LevelUp } from 'levelup';
 import encode from 'encoding-down';
 import memdown from 'memdown';
@@ -70,28 +70,6 @@ describe('makeExecutableSchema', () => {
             message: null,
           },
         },
-      });
-    });
-
-    it('returns an error when required fields are missing', async () => {
-      expect(
-        await graphql(
-          schema,
-          `
-            mutation {
-              createCommit(data: { message: "Nope!" }) {
-                id
-                hash
-                message
-              }
-            }
-          `
-        )
-      ).toEqual({
-        data: {
-          createCommit: null,
-        },
-        errors: [expect.any(GraphQLError)],
       });
     });
 

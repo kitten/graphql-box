@@ -18,6 +18,7 @@ import {
 
 import { ObjectNames } from './names';
 
+export const list = x => new GraphQLList(x);
 export const nonNull = x => new GraphQLNonNull(x);
 
 export const getScalarForString = (scalarType: string) => {
@@ -32,29 +33,45 @@ export const getScalarForString = (scalarType: string) => {
 const idScalar = nonNull(GraphQLID);
 const timestampScalar = nonNull(GraphQLDateTime);
 
-const genField = (name: string, type: GraphQLOutputType): GraphQLFieldConfig<any, any> => ({
-  type,
-});
+interface FieldConfig {
+  isRequired?: boolean;
+  isList?: boolean;
+}
 
-const genInputField = (name: string, type: GraphQLInputType): GraphQLInputFieldConfig => ({
-  type,
-});
+const genField = (
+  name: string,
+  type: GraphQLOutputType,
+  config: FieldConfig
+): GraphQLFieldConfig<any, any> => {
+  const maybeList = config.isList ? list(type) : type;
+  const maybeRequired = config.isRequired ? nonNull(maybeList) : maybeList;
+  return { type: maybeRequired };
+};
+
+const genInputField = (
+  name: string,
+  type: GraphQLInputType,
+  config: FieldConfig
+): GraphQLInputFieldConfig => {
+  const maybeList = config.isList ? list(type) : type;
+  const maybeRequired = config.isRequired ? nonNull(maybeList) : maybeList;
+  return { type: maybeRequired };
+};
 
 export const genFieldMap = (obj: IGQLType): GraphQLFieldConfigMap<any, any> => {
   const fieldMap: GraphQLFieldConfigMap<any, any> = {};
 
   for (const field of obj.fields) {
-    const { name } = field;
+    const { name, isList, isRequired } = field;
 
     if (field.isId) {
-      fieldMap.id = genField('id', idScalar);
+      fieldMap.id = genField('id', idScalar, {});
     } else if (name === 'createdAt' || name === 'updatedAt') {
-      fieldMap[name] = genField(name, timestampScalar);
+      fieldMap[name] = genField(name, timestampScalar, { isRequired: true });
     } else if (typeof field.type === 'string') {
+      const conf = { isList, isRequired };
       const scalar = getScalarForString(field.type);
-      const maybeList = field.isList ? new GraphQLList(scalar) : scalar;
-      const outputType = field.isRequired ? nonNull(maybeList) : maybeList;
-      fieldMap[name] = genField(name, outputType);
+      fieldMap[name] = genField(name, scalar, conf);
     } else {
       // TODO
       throw new Error('Relationships in SDL types are currently unsupported');
@@ -87,14 +104,16 @@ export const genCreateInput = (names: ObjectNames, obj: IGQLType): GraphQLInputO
   const fieldMap: GraphQLInputFieldConfigMap = {};
 
   for (const field of obj.fields) {
-    const { name } = field;
+    const { name, isList, isRequired } = field;
 
-    if (name !== 'createdAt' && name !== 'updatedAt' && typeof field.type === 'string') {
-      const scalar = getScalarForString(field.type);
-      fieldMap[name] = genInputField(name, scalar);
-    } else {
-      // TODO
-      throw new Error('Relationships in SDL types are currently unsupported');
+    if (!field.isId && name !== 'createdAt' && name !== 'updatedAt') {
+      if (typeof field.type === 'string') {
+        const scalar = getScalarForString(field.type);
+        fieldMap[name] = genInputField(name, scalar, { isList, isRequired });
+      } else {
+        // TODO
+        throw new Error('Relationships in SDL types are currently unsupported');
+      }
     }
   }
 
@@ -107,7 +126,7 @@ export const genCreateInput = (names: ObjectNames, obj: IGQLType): GraphQLInputO
 export const genUniqueWhereInput = (names: ObjectNames, obj: IGQLType): GraphQLInputObjectType => {
   const inputName = `${names.typeName}WhereUnique`;
   const fieldMap: GraphQLInputFieldConfigMap = {
-    id: genInputField('id', GraphQLID),
+    id: genInputField('id', GraphQLID, {}),
   };
 
   for (const field of obj.fields) {
@@ -121,7 +140,7 @@ export const genUniqueWhereInput = (names: ObjectNames, obj: IGQLType): GraphQLI
       }
 
       const scalar = getScalarForString(field.type);
-      fieldMap[name] = genInputField(name, scalar);
+      fieldMap[name] = genInputField(name, scalar, {});
     }
   }
 
