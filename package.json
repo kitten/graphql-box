@@ -1,6 +1,6 @@
 {
   "name": "gqlvl",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Create a local GraphQL ORM backed by IndexedDB",
   "main": "gqlvl.js",
   "module": "gqlvl.es.js",
