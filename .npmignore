@@ -2,6 +2,7 @@
 *.log
 *.tgz
 *.map
+*.lock
 types/
 __tests__
 tsconfig.json

@@ -1,12 +1,12 @@
 {
   "name": "gqlvl",
-  "version": "0.1.0-alpha.2",
-  "description": "Create a local GraphQL ORM backed by IndexedDB",
+  "version": "0.1.0-alpha.3",
+  "description": "Easily spin up a Prisma-like GraphQL ORM on top of any leveldown store 🎚️",
   "main": "gqlvl.js",
   "module": "gqlvl.es.js",
   "umd:main": "gqlvl.umd.js",
   "source": "src/index.ts",
-  "repository": "https://github.com/kitten/graphql-local-idb",
+  "repository": "https://github.com/kitten/gqlvl",
   "author": "Phil Pluckthun <phil@kitten.sh>",
   "license": "MIT",
   "scripts": {
