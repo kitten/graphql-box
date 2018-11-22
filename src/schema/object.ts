@@ -1,4 +1,4 @@
-import ObjectTable from '../level/ObjectTable';
+import ObjectTable from '../relational/ObjectTable';
 import { genObjectNames } from './names';
 import { SchemaParams, ObjectSchema } from './types';
 import * as gen from './gen';
