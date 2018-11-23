@@ -8,6 +8,7 @@ type Commit {
   id: ID! @unique
   hash: String! @unique
   message: String
+  authors: [String]
 }
 
 type File {

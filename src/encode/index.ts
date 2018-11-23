@@ -33,7 +33,7 @@ const serializeInt: Serializer<number> = val => String(val | 0);
 const deserializeInt: Deserializer<number> = str => parseInt(str, 10);
 
 const serializeNull = <T>(child: Serializer<T>): Serializer<null | T> => val =>
-  val === null ? '' : NOT_NULL_PREFIX + child(val);
+  val === null || val === undefined ? '' : NOT_NULL_PREFIX + child(val);
 
 const deserializeNull = <T>(child: Deserializer<T>): Deserializer<null | T> => str =>
   str.charCodeAt(0) !== NOT_NULL_CHARCODE ? null : child(str.slice(1));

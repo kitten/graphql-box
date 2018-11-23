@@ -115,10 +115,9 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
       for (const { name, defaultValue } of this.fields) {
         const index = this.index[name];
         const { serializer } = this.encoderMap[name];
-
-        const input = data[name];
-        const shouldDefault = !!defaultValue && input === null;
-        const value = serializer(shouldDefault ? defaultValue : input);
+        const fallbackValue = defaultValue === undefined ? null : defaultValue;
+        const shouldDefault = !(name in data);
+        const value = serializer(shouldDefault ? fallbackValue : data[name]);
 
         batch = batch.put(gen3DKey(this.name, id, name), value);
         if (index !== undefined) {
