@@ -1,15 +1,13 @@
 import { LevelInterface, LevelChainInterface } from '../level';
 import { ObjectFieldIndexParams } from './types';
-import { gen3DKey } from './keys';
+import { gen2DKey } from './keys';
 
 class ObjectFieldIndex<K> {
-  typeName: string;
-  fieldName: K;
+  name: string;
   store: LevelInterface;
 
   constructor(params: ObjectFieldIndexParams<K>) {
-    this.typeName = params.typeName;
-    this.fieldName = params.fieldName;
+    this.name = gen2DKey(params.typeName, params.fieldName);
     this.store = params.store;
   }
 
@@ -18,7 +16,7 @@ class ObjectFieldIndex<K> {
       return null;
     }
 
-    const key = gen3DKey(this.typeName, this.fieldName, value);
+    const key = gen2DKey(this.name, value);
     return this.store.get(key);
   }
 
@@ -27,7 +25,7 @@ class ObjectFieldIndex<K> {
       return batch;
     }
 
-    const key = gen3DKey(this.typeName, this.fieldName, value);
+    const key = gen2DKey(this.name, value);
     return batch.del(key);
   }
 
@@ -36,7 +34,7 @@ class ObjectFieldIndex<K> {
       return batch;
     }
 
-    const key = gen3DKey(this.typeName, this.fieldName, value);
+    const key = gen2DKey(this.name, value);
     const prev = await this.store.get(key);
     if (prev !== null) {
       throw new Error(`Duplicate index value on "${key}"`);
