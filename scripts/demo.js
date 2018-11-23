@@ -8,13 +8,13 @@ type Commit {
   id: ID! @unique
   hash: String! @unique
   message: String
-  authors: [String]
+  meta: JSON!
 }
 
 type File {
   id: ID! @unique
   createdAt: DateTime!
-  name: String
+  name: String!
 }
 `;
 

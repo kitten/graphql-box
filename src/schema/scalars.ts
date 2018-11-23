@@ -7,12 +7,14 @@ import {
   GraphQLBoolean,
 } from 'graphql/type';
 
+import GraphQLJSON from 'graphql-type-json';
 import { GraphQLDate, GraphQLTime, GraphQLDateTime } from 'graphql-iso-date';
 
 const NullableDate = getNullableType(GraphQLDate);
 const NullableTime = getNullableType(GraphQLTime);
 const NullableDateTime = getNullableType(GraphQLDateTime);
 const NullableID = getNullableType(GraphQLID);
+const NullableJSON = getNullableType(GraphQLJSON);
 
 export const getScalarForString = (scalarType: string) => {
   switch (scalarType) {
@@ -22,6 +24,8 @@ export const getScalarForString = (scalarType: string) => {
       return NullableTime;
     case 'DateTime':
       return NullableDateTime;
+    case 'JSON':
+      return NullableJSON;
     case 'ID':
       return NullableID;
     case 'Int':

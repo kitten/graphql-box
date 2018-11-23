@@ -20,6 +20,9 @@ const ESC_LIST_SEPARATOR_RE = /%2C/g;
 
 const identity = <T>(val) => val;
 
+const serializeJSON: Serializer<any> = val => JSON.stringify(val);
+const deserializeJSON: Deserializer<any> = val => JSON.parse(val);
+
 const serializeDateTime: Serializer<Date> = val => String(val.valueOf());
 const deserializeDateTime: Deserializer<Date> = str => new Date(parseInt(str, 10));
 
@@ -90,6 +93,10 @@ export const makeEncoder = <T>(field: ObjectFieldDefinition<any>): Encoder<any> 
     case 'DateTime':
       serializer = serializeDateTime;
       deserializer = deserializeDateTime;
+      break;
+    case 'JSON':
+      serializer = serializeJSON;
+      deserializer = deserializeJSON;
       break;
     case 'Int':
       serializer = serializeInt;
