@@ -1,6 +1,6 @@
 {
   "name": "gqlvl",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.0-alpha.5",
   "description": "Easily spin up a Prisma-like GraphQL ORM on top of any leveldown store 🎚️",
   "main": "gqlvl.js",
   "module": "gqlvl.es.js",
