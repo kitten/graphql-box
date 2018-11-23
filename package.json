@@ -9,6 +9,7 @@
   "repository": "https://github.com/kitten/gqlvl",
   "author": "Phil Pluckthun <phil@kitten.sh>",
   "license": "MIT",
+  "sideEffects": false,
   "scripts": {
     "demo": "micro scripts/demo.js",
     "bundle": "microbundle build --no-sourcemap --target web",
