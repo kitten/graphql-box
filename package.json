@@ -29,6 +29,7 @@
     "preset": "ts-jest",
     "testPathIgnorePatterns": [
       "!*.d.ts",
+      "!*.js",
       "/node_modules/",
       "/lib/"
     ]
