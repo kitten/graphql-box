@@ -1,5 +1,4 @@
-import { specifiedScalarTypes } from 'graphql/type/scalars';
-import { GraphQLDate, GraphQLTime, GraphQLDateTime } from 'graphql-iso-date';
+import { GraphQLDateTime } from 'graphql-iso-date';
 import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
 
 import {
@@ -20,7 +19,7 @@ import {
 import { getScalarForString } from './scalars';
 import { ObjectNames } from './names';
 
-const nonNull = x => new GraphQLNonNull(getNullableType(x));
+export const nonNull = x => new GraphQLNonNull(getNullableType(x));
 const list = x => new GraphQLList(nonNull(x));
 const idScalar = nonNull(GraphQLID);
 const timestampScalar = nonNull(GraphQLDateTime);

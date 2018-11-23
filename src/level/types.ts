@@ -9,7 +9,7 @@ export interface LevelChainInterface<K = string, V = string> {
 }
 
 export interface LevelInterface<K = string, V = string> {
-  get(key: K): Promise<V>;
+  get(key: K): Promise<V | null>;
   put(key: K, value: V): Promise<void>;
   del(key: K): Promise<void>;
   batch(): LevelChainInterface;

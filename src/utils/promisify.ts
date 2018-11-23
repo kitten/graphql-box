@@ -7,15 +7,15 @@ type PromiseFn = (<T>() => Promise<T>) &
 export function promisify(f: OriginalFn): PromiseFn {
   function promisified(...args) {
     return new Promise((resolve, reject) => {
-      args.push(function callback(err, value) {
-        if (err !== null) {
+      function callback(err, value) {
+        if (err !== null && err !== undefined) {
           reject(err);
         } else {
           resolve(value);
         }
-      });
+      }
 
-      f.call(this, ...args);
+      f.call(this, ...args, callback);
     });
   }
 

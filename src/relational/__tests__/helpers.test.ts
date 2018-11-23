@@ -2,24 +2,13 @@ import levelup, { LevelUp } from 'levelup';
 import encode from 'encoding-down';
 import memdown from 'memdown';
 
-import { getOrNull, nextOrNull, closeIter, objectOfFields } from '../helpers';
+import { nextOrNull, closeIter } from '../helpers';
 
 describe('level/helpers', () => {
   let store: LevelUp;
 
   beforeEach(() => {
     store = levelup(encode(memdown(), { keyEncoding: 'none', valueEncoding: 'json' }));
-  });
-
-  describe('getOrNull', () => {
-    it('works', async () => {
-      const entry = ['test-key', 'test-value'];
-      await store.put(...entry);
-      const val = await getOrNull(store, entry[0]);
-      expect(val).toBe(entry[1]);
-      const nothing = await getOrNull(store, 'bogus');
-      expect(nothing).toBe(null);
-    });
   });
 
   describe('nextOrNull & closeIter', () => {
@@ -38,14 +27,6 @@ describe('level/helpers', () => {
       expect(output).toEqual([entryA, entryB, null]);
 
       await closeIter(iterator);
-    });
-  });
-
-  describe('objectOfFields', () => {
-    it('works', () => {
-      const keys = ['a', 'b', 'c'];
-      const vals = ['1', '2', '3'];
-      expect(objectOfFields<any, string>(keys, vals)).toEqual({ a: '1', b: '2', c: '3' });
     });
   });
 });

@@ -1,28 +1,34 @@
-import levelup, { LevelUp } from 'levelup';
-import encode from 'encoding-down';
 import memdown from 'memdown';
-
+import level, { LevelInterface } from '../../level';
 import { genId, gen3DKey } from '../keys';
-import { getOrNull } from '../helpers';
 import ObjectTable from '../ObjectTable';
 
 type Test = {
   id: string;
-  createdAt: number;
-  updatedAt: number;
+  createdAt: Date;
+  updatedAt: Date;
   test: string;
 };
 
 const name = 'Test';
 
-const fields = [{ name: 'test', isUnique: true, isReadOnly: false }] as any;
+const fields = [
+  {
+    name: 'test',
+    type: 'String',
+    isList: false,
+    isRequired: true,
+    isUnique: true,
+    isReadOnly: false,
+  },
+] as any;
 
 describe('level/ObjectTable', () => {
-  let store: LevelUp;
+  let store: LevelInterface;
   let table: ObjectTable<Test>;
 
   beforeEach(() => {
-    store = levelup(encode(memdown(), { keyEncoding: 'none', valueEncoding: 'json' }));
+    store = level(memdown());
     table = new ObjectTable({ name, store, fields });
   });
 
@@ -50,52 +56,46 @@ describe('level/ObjectTable', () => {
     const id = genId();
 
     await store.put(gen3DKey(name, id, 'id'), id);
-    await store.put(gen3DKey(name, id, 'createdAt'), 1);
-    await store.put(gen3DKey(name, id, 'updatedAt'), 2);
+    await store.put(gen3DKey(name, id, 'createdAt'), '1');
+    await store.put(gen3DKey(name, id, 'updatedAt'), '2');
     await store.put(gen3DKey(name, id, 'test'), 'manual creation');
 
     await table.updateObject({ id }, { test: 'updated' });
 
     expect(await store.get(gen3DKey(name, id, 'test'))).toBe('updated');
     expect(await store.get(gen3DKey(name, id, 'id'))).toBe(id);
-    expect(await store.get(gen3DKey(name, id, 'createdAt'))).toBe(1);
-    expect(await store.get(gen3DKey(name, id, 'updatedAt'))).not.toBe(2);
+    expect(await store.get(gen3DKey(name, id, 'createdAt'))).toBe('1');
+    expect(await store.get(gen3DKey(name, id, 'updatedAt'))).not.toBe('2');
   });
 
   it('can delete objects', async () => {
     const id = genId();
 
     await store.put(gen3DKey(name, id, 'id'), id);
-    await store.put(gen3DKey(name, id, 'createdAt'), 1);
-    await store.put(gen3DKey(name, id, 'updatedAt'), 2);
+    await store.put(gen3DKey(name, id, 'createdAt'), '1');
+    await store.put(gen3DKey(name, id, 'updatedAt'), '2');
     await store.put(gen3DKey(name, id, 'test'), 'manual creation');
 
     await table.deleteObject({ id });
 
-    expect(await getOrNull(store, gen3DKey(name, id, 'id'))).toBe(null);
-    expect(await getOrNull(store, gen3DKey(name, id, 'test'))).toBe(null);
-    expect(await getOrNull(store, gen3DKey(name, id, 'createdAt'))).toBe(null);
-    expect(await getOrNull(store, gen3DKey(name, id, 'updatedAt'))).toBe(null);
-  });
-
-  it('can get fields by name and id', async () => {
-    const id = genId();
-    await store.put(gen3DKey(name, id, 'id'), id);
-    expect(await table.getField(id, 'id')).toBe(id);
+    expect(await store.get(gen3DKey(name, id, 'id'))).toBe(null);
+    expect(await store.get(gen3DKey(name, id, 'test'))).toBe(null);
+    expect(await store.get(gen3DKey(name, id, 'createdAt'))).toBe(null);
+    expect(await store.get(gen3DKey(name, id, 'updatedAt'))).toBe(null);
   });
 
   it('can get objects by id', async () => {
     const id = genId();
 
     await store.put(gen3DKey(name, id, 'id'), id);
-    await store.put(gen3DKey(name, id, 'createdAt'), 1);
-    await store.put(gen3DKey(name, id, 'updatedAt'), 2);
+    await store.put(gen3DKey(name, id, 'createdAt'), '1');
+    await store.put(gen3DKey(name, id, 'updatedAt'), '2');
     await store.put(gen3DKey(name, id, 'test'), 'manual creation');
 
     expect(await table.getObject(id)).toEqual({
       id,
-      createdAt: 1,
-      updatedAt: 2,
+      createdAt: new Date(1),
+      updatedAt: new Date(2),
       test: 'manual creation',
     });
   });
@@ -111,8 +111,8 @@ describe('level/ObjectTable', () => {
     expect(actual).toEqual(data);
     expect(actual).toEqual({
       id: expect.any(String),
-      createdAt: expect.any(Number),
-      updatedAt: expect.any(Number),
+      createdAt: expect.any(Date),
+      updatedAt: expect.any(Date),
       test: 'test-1',
     });
   });
@@ -129,7 +129,7 @@ describe('level/ObjectTable', () => {
 
     expect(updated).toEqual({
       ...obj,
-      updatedAt: expect.any(Number),
+      updatedAt: expect.any(Date),
       test: 'updated',
     });
 
@@ -142,8 +142,8 @@ describe('level/ObjectTable', () => {
     const id = genId();
 
     await store.put(gen3DKey(name, id, 'id'), id);
-    await store.put(gen3DKey(name, id, 'createdAt'), 1);
-    await store.put(gen3DKey(name, id, 'updatedAt'), 2);
+    await store.put(gen3DKey(name, id, 'createdAt'), '1');
+    await store.put(gen3DKey(name, id, 'updatedAt'), '2');
     await store.put(gen3DKey(name, id, 'test'), 'manual creation');
 
     await table.deleteObject({ id });
@@ -161,8 +161,8 @@ describe('level/ObjectTable', () => {
     for await (const item of table.iterator()) {
       expect(item).toEqual({
         id: expect.any(String),
-        createdAt: expect.any(Number),
-        updatedAt: expect.any(Number),
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
         test: expect.any(String),
       });
 
@@ -180,8 +180,8 @@ describe('level/ObjectTable', () => {
     for await (const item of table.iterator({})) {
       expect(item).toEqual({
         id: expect.any(String),
-        createdAt: expect.any(Number),
-        updatedAt: expect.any(Number),
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
         test: expect.any(String),
       });
 

@@ -1,14 +1,11 @@
-import { LevelUp, LevelUpChain } from 'levelup';
+import { LevelInterface, LevelChainInterface } from '../level';
 import { ObjectFieldIndexParams } from './types';
-import { getOrNull } from './helpers';
 import { gen3DKey } from './keys';
 
-type ID = string;
-
-class ObjectFieldIndex<T, K> {
+class ObjectFieldIndex<K> {
   typeName: string;
   fieldName: K;
-  store: LevelUp;
+  store: LevelInterface;
 
   constructor(params: ObjectFieldIndexParams<K>) {
     this.typeName = params.typeName;
@@ -16,16 +13,16 @@ class ObjectFieldIndex<T, K> {
     this.store = params.store;
   }
 
-  lookup(value: T): Promise<string | null> {
+  lookup(value: string): Promise<string | null> {
     if (value === null) {
       return null;
     }
 
     const key = gen3DKey(this.typeName, this.fieldName, value);
-    return getOrNull<ID>(this.store, key);
+    return this.store.get(key);
   }
 
-  unindex(value: T, id: ID, batch: LevelUpChain): LevelUpChain {
+  unindex(value: string, id: string, batch: LevelChainInterface): LevelChainInterface {
     if (value === null) {
       return batch;
     }
@@ -34,21 +31,26 @@ class ObjectFieldIndex<T, K> {
     return batch.del(key);
   }
 
-  async index(value: T, id: ID, batch: LevelUpChain): Promise<LevelUpChain> {
+  async index(value: string, id: string, batch: LevelChainInterface): Promise<LevelChainInterface> {
     if (value === null) {
       return batch;
     }
 
     const key = gen3DKey(this.typeName, this.fieldName, value);
-    const hasPrev = (await getOrNull<ID>(this.store, key)) !== null;
-    if (hasPrev) {
+    const prev = await this.store.get(key);
+    if (prev !== null) {
       throw new Error(`Duplicate index value on "${key}"`);
     }
 
     return batch.put(key, id);
   }
 
-  async reindex(prev: T, value: T, id: ID, batch: LevelUpChain): Promise<LevelUpChain> {
+  async reindex(
+    prev: string,
+    value: string,
+    id: string,
+    batch: LevelChainInterface
+  ): Promise<LevelChainInterface> {
     return this.unindex(prev, id, await this.index(value, id, batch));
   }
 }

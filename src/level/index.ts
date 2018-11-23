@@ -17,13 +17,17 @@ export class LevelWrapper implements LevelInterface<K, V> {
 
   constructor(db: AbstractLevelDOWN) {
     this.db = optimiseLevelJs(db) as InternalLevelDown;
-    this.put = promisify(this.db._put).bind(this.db);
-    this.del = promisify(this.db._del).bind(this.db);
-    this._get = promisify(this.db._get).bind(this.db);
+    this.put = promisify(this.db.put).bind(this.db);
+    this.del = promisify(this.db.del).bind(this.db);
+    this._get = promisify(this.db.get).bind(this.db);
   }
 
-  get(key: K): Promise<V> {
-    return this._get(key, { asBuffer: false });
+  async get(key: K): Promise<V | null> {
+    try {
+      return await this._get(key, { asBuffer: false });
+    } catch (_err) {
+      return null;
+    }
   }
 
   iterator(options: AbstractIteratorOptions = {}): AbstractIterator<K, V> {
@@ -41,4 +45,5 @@ export class LevelWrapper implements LevelInterface<K, V> {
 
 const level = (db: AbstractLevelDOWN) => new LevelWrapper(db);
 
+export { LevelInterface, LevelChainInterface };
 export default level;

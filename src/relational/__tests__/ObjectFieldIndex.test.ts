@@ -1,7 +1,5 @@
-import levelup, { LevelUp } from 'levelup';
-import encode from 'encoding-down';
 import memdown from 'memdown';
-
+import level, { LevelInterface } from '../../level';
 import { genId, gen3DKey } from '../keys';
 import ObjectFieldIndex from '../ObjectFieldIndex';
 
@@ -9,12 +7,12 @@ const typeName = 'Type';
 const fieldName = 'field';
 
 describe('level/ObjectFieldIndex', () => {
-  let store: LevelUp;
-  let index: ObjectFieldIndex<string, string>;
+  let store: LevelInterface;
+  let index: ObjectFieldIndex<string>;
 
   beforeEach(() => {
-    store = levelup(encode(memdown(), { keyEncoding: 'none', valueEncoding: 'json' }));
-    index = new ObjectFieldIndex<string, string>({ typeName, fieldName, store });
+    store = level(memdown());
+    index = new ObjectFieldIndex<string>({ typeName, fieldName, store });
   });
 
   it('can retrieve indexed values', async () => {

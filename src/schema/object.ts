@@ -13,7 +13,7 @@ export const schemaForObject = ({ obj, store }: SchemaParams): ObjectSchema => {
 
   const table = new ObjectTable({
     name: names.typeName,
-    fields: obj.fields,
+    fields: obj.fields as any,
     store,
   });
 
