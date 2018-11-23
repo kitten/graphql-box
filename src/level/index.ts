@@ -1,11 +1,15 @@
 import { AbstractLevelDOWN, AbstractIteratorOptions, AbstractIterator } from 'abstract-leveldown';
 
+import DeferredLevelDOWN from 'deferred-leveldown';
+
 import { promisify } from '../utils/promisify';
 import { LevelInterface, LevelChainInterface, InternalLevelDown } from './types';
 import { optimiseLevelJs } from './optimiseLevelJs';
 
 type K = string;
 type V = string;
+
+function noop() {}
 
 export class LevelWrapper implements LevelInterface<K, V> {
   db: InternalLevelDown;
@@ -16,10 +20,18 @@ export class LevelWrapper implements LevelInterface<K, V> {
   _get: (K, AbstractGetOptions) => Promise<V>;
 
   constructor(db: AbstractLevelDOWN) {
-    this.db = optimiseLevelJs(db) as InternalLevelDown;
+    this.db = new DeferredLevelDOWN(optimiseLevelJs(db)) as InternalLevelDown;
     this.put = promisify(this.db.put).bind(this.db);
     this.del = promisify(this.db.del).bind(this.db);
     this._get = promisify(this.db.get).bind(this.db);
+
+    this.db.open(
+      {
+        createIfMissing: true,
+        errorIfExists: false,
+      },
+      noop
+    );
   }
 
   async get(key: K): Promise<V | null> {
