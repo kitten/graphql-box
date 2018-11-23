@@ -2,7 +2,7 @@
   "include": ["src/**/*.ts"],
   "exclude": [],
   "compilerOptions": {
-    "typeRoots": ["./types/", "./node_modules/@types/"],
+    "typeRoots": ["./node_modules/@types/"],
     "rootDir": "src",
     "outDir": ".",
     "lib": ["es6", "dom", "es2017.object", "esnext"],

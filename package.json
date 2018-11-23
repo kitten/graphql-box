@@ -36,9 +36,7 @@
   },
   "dependencies": {
     "cuid": "^2.1.4",
-    "encoding-down": "^5.0.4",
     "graphql-iso-date": "^3.6.1",
-    "levelup": "^3.1.1",
     "prisma-generate-schema": "^1.20.4"
   },
   "peerDependencies": {

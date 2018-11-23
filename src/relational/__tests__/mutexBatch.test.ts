@@ -1,14 +1,13 @@
-import levelup, { LevelUp } from 'levelup';
-import encode from 'encoding-down';
 import memdown from 'memdown';
+import level, { LevelInterface } from '../../level';
 import { mutexBatchFactory, MutexBatch } from '../mutexBatch';
 
 describe('level/mutexBatch', () => {
-  let store: LevelUp;
+  let store: LevelInterface;
   let mutexBatch: MutexBatch;
 
   beforeEach(() => {
-    store = levelup(encode(memdown(), { keyEncoding: 'none', valueEncoding: 'json' }));
+    store = level(memdown());
     mutexBatch = mutexBatchFactory(store);
   });
 

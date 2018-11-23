@@ -1,13 +1,15 @@
-import { LevelUp, LevelUpChain } from 'levelup';
+import { LevelInterface, LevelChainInterface } from '../level';
+
+type BatchFn = (batch: LevelChainInterface) => LevelChainInterface | Promise<LevelChainInterface>;
 
 export interface MutexBatch {
-  (fn: (batch: LevelUpChain) => Promise<LevelUpChain>): Promise<void>;
+  (fn: BatchFn): Promise<void>;
 }
 
-export const mutexBatchFactory = (store: LevelUp): MutexBatch => {
+export const mutexBatchFactory = (store: LevelInterface): MutexBatch => {
   let mutex: void | Promise<void>;
 
-  return async function mutexBatch(fn: (batch: LevelUpChain) => Promise<LevelUpChain>) {
+  return async function mutexBatch(fn: BatchFn) {
     if (mutex !== undefined) {
       await mutex;
     }

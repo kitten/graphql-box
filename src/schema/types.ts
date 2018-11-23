@@ -1,10 +1,10 @@
 import { GraphQLFieldConfigMap } from 'graphql/type';
 import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
-import { LevelUp } from 'levelup';
+import { LevelInterface } from '../level';
 
 export interface SchemaParams {
   obj: IGQLType;
-  store: LevelUp;
+  store: LevelInterface;
 }
 
 export interface ObjectSchema {
