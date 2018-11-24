@@ -27,6 +27,12 @@ export interface ObjectFieldIndexParams<K> {
   store: LevelInterface;
 }
 
+export interface EdgeRelationshipParams<K> {
+  relationName: null | string;
+  typeNames: [string, string];
+  store: LevelInterface;
+}
+
 export interface ObjectLike {
   id: string;
   createdAt: Date;
