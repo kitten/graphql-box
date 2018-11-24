@@ -5,10 +5,7 @@ import {
   serializeDate,
 } from 'graphql-iso-date/dist/utils/formatter';
 
-import { FieldDefinition } from '../internal';
-
-type Serializer<T> = (val: T) => string;
-type Deserializer<T> = (str: string) => T;
+import { FieldDefinitionParams, Encoder, Serializer, Deserializer } from './types';
 
 const NOT_NULL_PREFIX = ':';
 const NOT_NULL_CHARCODE = NOT_NULL_PREFIX.charCodeAt(0);
@@ -66,12 +63,7 @@ const deserializeList = <T>(child: Deserializer<T>): Deserializer<T[]> => str =>
   return out;
 };
 
-export interface Encoder<T> {
-  serializer: Serializer<T>;
-  deserializer: Deserializer<T>;
-}
-
-export const makeEncoder = <T>(field: FieldDefinition): Encoder<any> => {
+export const makeEncoder = <T>(field: FieldDefinitionParams): Encoder<any> => {
   if (typeof field.type !== 'string') {
     throw new Error('Relationships in SDL types are currently unsupported');
   }
@@ -115,9 +107,6 @@ export const makeEncoder = <T>(field: FieldDefinition): Encoder<any> => {
       serializer = identity;
       deserializer = identity;
       break;
-
-    default:
-      throw new Error(`Unspecified scalar type "${type}" found`);
   }
 
   if (isList) {

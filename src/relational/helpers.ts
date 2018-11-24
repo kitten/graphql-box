@@ -1,5 +1,6 @@
 import { AbstractIterator } from 'abstract-leveldown';
-import { ObjectLike, EncoderList } from './types';
+import { Deserializer } from '../internal';
+import { ObjectLike } from './types';
 
 export const nextOrNull = (
   iter: AbstractIterator<string, string>
@@ -29,7 +30,7 @@ export const closeIter = (iter: AbstractIterator<any, any>) =>
 
 export const nextObjectOrNull = async <T extends ObjectLike, K extends keyof T>(
   keys: K[],
-  encoders: EncoderList<T>,
+  decoders: Deserializer<T[K]>[],
   iter: AbstractIterator<string, string>
 ): Promise<T | null> => {
   const res = {} as T;
@@ -39,7 +40,7 @@ export const nextObjectOrNull = async <T extends ObjectLike, K extends keyof T>(
     if (entry === null) {
       return null;
     } else {
-      res[keys[i]] = encoders[i].deserializer(entry[1]) as T[K];
+      res[keys[i]] = decoders[i](entry[1]) as T[K];
     }
   }
 

@@ -1,6 +1,6 @@
 import { LevelInterface } from '../level';
-import { FieldDefinition } from '../internal';
-import { makeEncoder } from '../encode';
+import { FieldDefinition, Serializer, Deserializer } from '../internal';
+
 import { nextObjectOrNull, closeIter } from './helpers';
 import { genId, gen2DKey, gen3DKey, rangeOfKey } from './keys';
 import { mutexBatchFactory, MutexBatch } from './mutexBatch';
@@ -14,37 +14,45 @@ import {
   IteratorOptions,
   FieldIndexMap,
   FieldOrdinalMap,
-  EncoderMap,
-  EncoderList,
 } from './types';
 
 class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   name: string;
   store: LevelInterface;
-  fields: FieldDefinition<K>[];
-  fieldsLength: number;
-  fieldNames: K[];
-  encoderMap: EncoderMap<T>;
-  encoderList: EncoderList<T>;
-  index: FieldIndexMap<T>;
-  ordinal: FieldOrdinalMap<T>;
   mutexBatch: MutexBatch;
 
-  constructor(params: ObjectTableParams<K>) {
+  fields: FieldDefinition<T[K], K>[];
+  fieldsLength: number;
+  fieldNames: K[];
+
+  encoders: Serializer<T[K]>[];
+  decoders: Deserializer<T[K]>[];
+
+  index: FieldIndexMap<T>;
+  ordinal: FieldOrdinalMap<T>;
+
+  constructor(params: ObjectTableParams<T, K>) {
     this.name = params.name;
     this.store = params.store;
     this.mutexBatch = mutexBatchFactory(this.store);
+
+    this.fields = params.fields;
+    const fieldsLength = (this.fieldsLength = this.fields.length);
+    this.fieldNames = new Array(fieldsLength);
+
+    this.encoders = new Array(fieldsLength);
+    this.decoders = new Array(fieldsLength);
+
     this.index = {} as FieldIndexMap<T>;
     this.ordinal = {} as FieldOrdinalMap<T>;
-    this.fields = params.fields;
-    this.fieldsLength = this.fields.length;
-    this.fieldNames = new Array(this.fieldsLength);
-    this.encoderMap = {} as EncoderMap<T>;
-    this.encoderList = new Array(this.fieldsLength);
 
-    for (let i = 0; i < this.fieldsLength; i++) {
+    for (let i = 0; i < fieldsLength; i++) {
       const field = this.fields[i];
-      const fieldName = field.name;
+      const fieldName = (this.fieldNames[i] = field.name);
+
+      this.encoders[i] = field.encode;
+      this.decoders[i] = field.decode;
+
       const indexParams = {
         typeName: this.name,
         fieldName: fieldName,
@@ -56,42 +64,42 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
       } else if (field.isOrdinal) {
         this.ordinal[fieldName] = new ObjectFieldOrdinal<K>(indexParams);
       }
-
-      const encoder = makeEncoder(field);
-      this.encoderMap[fieldName] = this.encoderList[i] = encoder;
-      this.fieldNames[i] = fieldName;
     }
   }
 
   iterator({ reverse = false, limit = -1 }: IteratorOptions = {}): AsyncObjectIterator<T, K> {
-    const { store, name, fieldsLength, fieldNames, encoderList } = this;
+    const { store, name, fieldsLength, fieldNames, decoders } = this;
     const range = rangeOfKey(name);
     range.reverse = reverse;
     range.limit = limit > 0 ? limit * fieldsLength : limit;
     const iterator = store.iterator(range);
-    return new AsyncObjectIterator<T, K>(fieldNames, encoderList, iterator);
+    return new AsyncObjectIterator<T, K>(fieldNames, decoders, iterator);
   }
 
   async getObject(id: string) {
-    const range = rangeOfKey(gen2DKey(this.name, id));
-    const iterator = this.store.iterator(range);
-    const res = await nextObjectOrNull<T, K>(this.fieldNames, this.encoderList, iterator);
+    const { store, name, fieldNames, decoders } = this;
+    const range = rangeOfKey(gen2DKey(name, id));
+    const iterator = store.iterator(range);
+    const res = await nextObjectOrNull<T, K>(fieldNames, decoders, iterator);
     await closeIter(iterator);
     return res;
   }
 
   async getIdByIndex(where: Partial<T>): Promise<string | null> {
+    const { store, name, fieldsLength, index, fieldNames, encoders } = this;
+
     let firstId = null;
     if (where.id !== null) {
-      const key = gen3DKey(this.name, where.id, 'id');
-      firstId = await this.store.get(key);
+      const key = gen3DKey(name, where.id, 'id');
+      firstId = await store.get(key);
     }
 
-    for (const fieldName in where) {
-      const index = this.index[fieldName];
-      if (index !== undefined) {
-        const value = this.encoderMap[fieldName].serializer(where[fieldName]);
-        const id = await index.lookup(value);
+    for (let i = 0, l = fieldsLength; i < l; i++) {
+      const fieldName = fieldNames[i];
+      const fieldIndex = index[fieldName];
+      if (fieldIndex !== undefined && fieldName in where) {
+        const value = encoders[i](where[fieldName]);
+        const id = await fieldIndex.lookup(value);
 
         if (id === null || (firstId !== null && firstId !== id)) {
           return null;
@@ -114,24 +122,28 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   }
 
   async createObject(data: Partial<T>): Promise<T> {
+    const { name, index, ordinal, fields, fieldsLength, encoders } = this;
     const id = (data.id = genId());
     data.createdAt = data.updatedAt = new Date();
 
     await this.mutexBatch(async b => {
       let batch = b;
-      for (const { name, defaultValue } of this.fields) {
-        const index = this.index[name];
-        const ordinal = this.ordinal[name];
-        const { serializer } = this.encoderMap[name];
-        const fallbackValue = defaultValue === undefined ? null : defaultValue;
-        const shouldDefault = !(name in data);
-        const value = serializer(shouldDefault ? fallbackValue : data[name]);
 
-        batch = batch.put(gen3DKey(this.name, id, name), value);
-        if (index !== undefined) {
-          batch = await index.index(value, id, batch);
-        } else if (ordinal !== undefined) {
-          batch = ordinal.index(value, id, batch);
+      for (let i = 0, l = fieldsLength; i < l; i++) {
+        const { name: fieldName, defaultValue } = fields[i];
+        const fieldIndex = index[fieldName];
+        const fieldOrdinal = ordinal[fieldName];
+        const encode = encoders[i];
+
+        const fallbackValue = defaultValue === undefined ? null : defaultValue;
+        const shouldDefault = !(fieldName in data);
+        const value = encode(shouldDefault ? fallbackValue : data[fieldName]);
+
+        batch = batch.put(gen3DKey(name, id, fieldName), value);
+        if (fieldIndex !== undefined) {
+          batch = await fieldIndex.index(value, id, batch);
+        } else if (fieldOrdinal !== undefined) {
+          batch = fieldOrdinal.index(value, id, batch);
         }
       }
 
@@ -147,28 +159,32 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
       throw new Error('No object has been found to update');
     }
 
+    const { name, index, ordinal, fields, fieldsLength, encoders } = this;
     const prev = await this.getObject(id);
     data.updatedAt = new Date();
 
     await this.mutexBatch(async b => {
       let batch = b;
-      for (const { name, defaultValue, isReadOnly } of this.fields) {
-        if (isReadOnly || !(name in data)) {
-          data[name] = prev[name];
-        } else {
-          const index = this.index[name];
-          const ordinal = this.ordinal[name];
-          const { serializer } = this.encoderMap[name];
-          const prevVal = serializer(prev[name]);
-          const input = data[name];
-          const shouldDefault = !!defaultValue && input === null;
-          const value = serializer(shouldDefault ? defaultValue : input);
 
-          batch = batch.put(gen3DKey(this.name, id, name), value);
-          if (index !== undefined) {
-            batch = await index.reindex(prevVal, value, id, batch);
-          } else if (ordinal !== undefined) {
-            batch = ordinal.reindex(prevVal, value, id, batch);
+      for (let i = 0, l = fieldsLength; i < l; i++) {
+        const { name: fieldName, isReadOnly, defaultValue } = fields[i];
+        if (isReadOnly || !(fieldName in data)) {
+          data[fieldName] = prev[fieldName];
+        } else {
+          const fieldIndex = index[fieldName];
+          const fieldOrdinal = ordinal[fieldName];
+          const encode = encoders[i];
+
+          const prevVal = encode(prev[fieldName]);
+          const input = data[fieldName];
+          const shouldDefault = !!defaultValue && input === null;
+          const value = encode(shouldDefault ? defaultValue : input);
+
+          batch = batch.put(gen3DKey(name, id, fieldName), value);
+          if (fieldIndex !== undefined) {
+            batch = await fieldIndex.reindex(prevVal, value, id, batch);
+          } else if (fieldOrdinal !== undefined) {
+            batch = fieldOrdinal.reindex(prevVal, value, id, batch);
           }
         }
       }
@@ -185,21 +201,24 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
       throw new Error('No object has been found to delete');
     }
 
+    const { name, index, ordinal, fields, fieldsLength, encoders } = this;
     const data = await this.getObject(id);
 
     await this.mutexBatch(async b => {
       let batch = b;
-      for (const { name } of this.fields) {
-        const index = this.index[name];
-        const ordinal = this.ordinal[name];
-        const { serializer } = this.encoderMap[name];
 
-        batch = batch.del(gen3DKey(this.name, id, name));
+      for (let i = 0, l = fieldsLength; i < l; i++) {
+        const { name: fieldName } = fields[i];
+        const fieldIndex = index[fieldName];
+        const fieldOrdinal = ordinal[fieldName];
+        const encode = encoders[i];
 
-        if (index !== undefined) {
-          batch = index.unindex(serializer(data[name]), id, batch);
-        } else if (ordinal !== undefined) {
-          batch = ordinal.unindex(serializer(data[name]), id, batch);
+        batch = batch.del(gen3DKey(name, id, fieldName));
+
+        if (fieldIndex !== undefined) {
+          batch = fieldIndex.unindex(encode(data[fieldName]), id, batch);
+        } else if (fieldOrdinal !== undefined) {
+          batch = fieldOrdinal.unindex(encode(data[fieldName]), id, batch);
         }
       }
 

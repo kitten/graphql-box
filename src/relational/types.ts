@@ -1,17 +1,10 @@
 import { AbstractIterator } from 'abstract-leveldown';
 import { FieldDefinition } from '../internal';
 import { LevelInterface } from '../level';
-import { Encoder } from '../encode';
 import ObjectFieldIndex from './ObjectFieldIndex';
 import ObjectFieldOrdinal from './ObjectFieldOrdinal';
 
 export type Iterator = AbstractIterator<string, string>;
-
-export interface ObjectTableParams<K> {
-  name: string;
-  fields: FieldDefinition<K>[];
-  store: LevelInterface;
-}
 
 export interface ObjectFieldIndexParams<K> {
   typeName: string;
@@ -31,6 +24,12 @@ export interface ObjectLike {
   updatedAt: Date;
 }
 
+export interface ObjectTableParams<T extends ObjectLike, K extends keyof T = keyof T> {
+  name: string;
+  fields: FieldDefinition<T[K], K>[];
+  store: LevelInterface;
+}
+
 export interface IteratorOptions {
   reverse?: boolean;
   limit?: number;
@@ -38,6 +37,3 @@ export interface IteratorOptions {
 
 export type FieldIndexMap<T extends ObjectLike> = { [K in keyof T]?: ObjectFieldIndex<K> };
 export type FieldOrdinalMap<T extends ObjectLike> = { [K in keyof T]?: ObjectFieldOrdinal<K> };
-
-export type EncoderMap<T extends ObjectLike> = { [K in keyof T]?: Encoder<T[K]> };
-export type EncoderList<T> = Encoder<T[keyof T]>[];

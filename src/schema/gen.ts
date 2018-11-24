@@ -10,7 +10,6 @@ import {
 
 import { FieldDefinition } from '../internal';
 import { getScalarForString } from './scalars';
-import { ObjectNames } from './names';
 
 export const nonNull = x => new GraphQLNonNull(getNullableType(x));
 export const list = x => new GraphQLList(nonNull(x));
@@ -22,20 +21,20 @@ const genField = (field: FieldDefinition, withRequired = true) => {
   return { type: maybeRequired };
 };
 
-export const genObjectType = (names: ObjectNames, fields: FieldDefinition[]) => {
+export const genObjectType = (name: string, fields: FieldDefinition[]) => {
   const fieldMap: GraphQLFieldConfigMap<any, any> = {};
   for (const field of fields) {
     fieldMap[field.name] = genField(field);
   }
 
   return new GraphQLObjectType({
-    name: names.typeName,
+    name,
     fields: fieldMap,
   });
 };
 
-export const genCreateInput = (names: ObjectNames, fields: FieldDefinition[]) => {
-  const inputName = `${names.typeName}Create`;
+export const genCreateInput = (name: string, fields: FieldDefinition[]) => {
+  const inputName = `${name}Create`;
   const fieldMap: GraphQLInputFieldConfigMap = {};
 
   for (const field of fields) {
@@ -50,8 +49,8 @@ export const genCreateInput = (names: ObjectNames, fields: FieldDefinition[]) =>
   });
 };
 
-export const genUpdateInput = (names: ObjectNames, fields: FieldDefinition[]) => {
-  const inputName = `${names.typeName}Update`;
+export const genUpdateInput = (name: string, fields: FieldDefinition[]) => {
+  const inputName = `${name}Update`;
   const fieldMap: GraphQLInputFieldConfigMap = {};
 
   for (const field of fields) {
@@ -66,8 +65,8 @@ export const genUpdateInput = (names: ObjectNames, fields: FieldDefinition[]) =>
   });
 };
 
-export const genUniqueWhereInput = (names: ObjectNames, fields: FieldDefinition[]) => {
-  const inputName = `${names.typeName}WhereUnique`;
+export const genUniqueWhereInput = (name: string, fields: FieldDefinition[]) => {
+  const inputName = `${name}WhereUnique`;
   const fieldMap: GraphQLInputFieldConfigMap = {};
 
   for (const field of fields) {

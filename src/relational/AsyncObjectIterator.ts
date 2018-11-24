@@ -1,19 +1,20 @@
-import { EncoderList, Iterator, ObjectLike } from './types';
+import { Deserializer } from '../internal';
+import { Iterator, ObjectLike } from './types';
 import { nextObjectOrNull } from './helpers';
 import AsyncLevelIterator from './AsyncLevelIterator';
 
 class AsyncObjectIterator<T extends ObjectLike, K extends keyof T> extends AsyncLevelIterator<T> {
   fieldNames: K[];
-  encoderList: EncoderList<T>;
+  decoders: Deserializer<T[K]>[];
 
-  constructor(fieldNames: K[], encoderList: EncoderList<T>, iterator: Iterator) {
+  constructor(fieldNames: K[], decoders: Deserializer<T[K]>[], iterator: Iterator) {
     super(iterator);
     this.fieldNames = fieldNames;
-    this.encoderList = encoderList;
+    this.decoders = decoders;
   }
 
   nextOrNull(): Promise<null | T> {
-    return nextObjectOrNull<T, K>(this.fieldNames, this.encoderList, this.iterator);
+    return nextObjectOrNull<T, K>(this.fieldNames, this.decoders, this.iterator);
   }
 }
 

@@ -1,9 +1,10 @@
-import { FieldDefinition } from './types';
+import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
+import { Scalar, FieldDefinitionParams } from './types';
 
 export const isSystemField = (name: string) =>
   name === 'id' || name === 'createdAt' || name === 'updatedAt';
 
-export const systemFields: FieldDefinition[] = [
+export const systemFieldDefs: FieldDefinitionParams[] = [
   {
     name: 'id',
     type: 'ID',
@@ -37,3 +38,26 @@ export const systemFields: FieldDefinition[] = [
     isReadOnly: false,
   },
 ];
+
+// Validate input scalars
+export const toScalar = (type: string | IGQLType): Scalar => {
+  if (typeof type !== 'string') {
+    // TODO
+    throw new Error('Relationship types are unsupported.');
+  }
+
+  switch (type) {
+    case 'Date':
+    case 'Time':
+    case 'DateTime':
+    case 'JSON':
+    case 'Int':
+    case 'Float':
+    case 'Boolean':
+    case 'ID':
+    case 'String':
+      return type as Scalar;
+    default:
+      throw new Error(`Unrecognised scalar of type "${type}".`);
+  }
+};

@@ -1,36 +1,47 @@
 import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
-import { Scalar, FieldDefinition } from './types';
-import { isSystemField, systemFields } from './helpers';
+import { Scalar, FieldDefinitionParams, Serializer, Deserializer } from './types';
+import { isSystemField, systemFieldDefs, toScalar } from './helpers';
+import { makeEncoder } from './encode';
 
-// Validate input scalars
-const toScalar = (type: string | IGQLType): Scalar => {
-  if (typeof type !== 'string') {
-    // TODO
-    throw new Error('Relationship types are unsupported.');
-  }
+export class FieldDefinition<T = any, K = any> {
+  name: K;
+  type: Scalar;
+  defaultValue?: any;
+  isSystemField: boolean; // One of: 'id', 'createdAt', or 'updatedAt'
+  isList: boolean; // Scalar is a list
+  isRequired: boolean; // Scalar is non-nullable
+  isUnique: boolean; // Column should be uniquely indexed
+  isOrdinal: boolean; // Column should be non-uniquely indexed
+  isReadOnly: boolean; // Column cannot be modified after creation
 
-  switch (type) {
-    case 'Date':
-    case 'Time':
-    case 'DateTime':
-    case 'JSON':
-    case 'Int':
-    case 'Float':
-    case 'Boolean':
-    case 'ID':
-    case 'String':
-      return type as Scalar;
-    default:
-      throw new Error(`Unrecognised scalar of type "${type}".`);
+  encode: Serializer<T>;
+  decode: Deserializer<T>;
+
+  constructor(params: FieldDefinitionParams<K>) {
+    // Constraints of field types and indexing
+    if (params.isUnique && params.isOrdinal) {
+      throw new Error(`Field "${params.name}" has been marked as both ordinal and unique.`);
+    } else if ((params.isUnique || params.isOrdinal) && params.isList) {
+      throw new Error(
+        `Field "${params.name}" of type List cannot been marked as ordinal or unique.`
+      );
+    }
+
+    Object.assign(this, params);
+    const encoder = makeEncoder(params);
+    this.encode = encoder.serializer;
+    this.decode = encoder.deserializer;
   }
-};
+}
+
+const systemFields = systemFieldDefs.map(params => new FieldDefinition(params));
 
 export const makeFields = <K>(obj: IGQLType): FieldDefinition<K>[] => {
   const sparseFields = obj.fields.filter(field => !isSystemField(field.name) && !field.isId);
 
   // Convert IGQLField to FieldDefinitions
   const objFieldDefinitions = sparseFields.map(field => {
-    const def = {
+    const def = new FieldDefinition({
       name: field.name,
       type: toScalar(field.type),
       defaultValue: field.defaultValue,
@@ -40,14 +51,7 @@ export const makeFields = <K>(obj: IGQLType): FieldDefinition<K>[] => {
       isUnique: field.isUnique,
       isOrdinal: false,
       isReadOnly: field.isReadOnly,
-    };
-
-    // Constraints of field types and indexing
-    if (def.isUnique && def.isOrdinal) {
-      throw new Error(`Field "${def.name}" has been marked as both ordinal and unique.`);
-    } else if ((def.isUnique || def.isOrdinal) && def.isList) {
-      throw new Error(`Field "${def.name}" of type List cannot been marked as ordinal or unique.`);
-    }
+    });
 
     return def;
   });

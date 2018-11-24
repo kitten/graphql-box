@@ -1,24 +1,25 @@
-import ObjectTable from '../relational/ObjectTable';
-import { genObjectNames } from './names';
-import { SchemaParams, ObjectSchema } from './types';
+import { ObjectDefinition } from '../internal';
+import { LevelInterface } from '../level';
+import { ObjectTable } from '../relational';
+import { ObjectSchema } from './types';
 import * as gen from './gen';
 
-export const schemaForObject = ({ name, fields, store }: SchemaParams): ObjectSchema => {
-  const names = genObjectNames(name);
-  const objectType = gen.genObjectType(names, fields);
-  const createInput = gen.genCreateInput(names, fields);
-  const updateInput = gen.genUpdateInput(names, fields);
-  const uniqueWhereInput = gen.genUniqueWhereInput(names, fields);
+export const schemaForObject = (obj: ObjectDefinition, store: LevelInterface): ObjectSchema => {
+  const { typeName, fields } = obj;
+  const objectType = gen.genObjectType(typeName, fields);
+  const createInput = gen.genCreateInput(typeName, fields);
+  const updateInput = gen.genUpdateInput(typeName, fields);
+  const uniqueWhereInput = gen.genUniqueWhereInput(typeName, fields);
 
   const table = new ObjectTable({
-    name: names.typeName,
+    name: typeName,
     fields,
     store,
   });
 
   return {
     query: {
-      [names.singleName]: {
+      [obj.singleName]: {
         type: objectType,
         args: {
           where: { type: gen.nonNull(uniqueWhereInput) },
@@ -27,12 +28,12 @@ export const schemaForObject = ({ name, fields, store }: SchemaParams): ObjectSc
       },
     },
     mutation: {
-      [`create${names.typeName}`]: {
+      [`create${typeName}`]: {
         type: objectType,
         args: { data: { type: gen.nonNull(createInput) } },
         resolve: (_, { data }) => table.createObject(data),
       },
-      [`update${names.typeName}`]: {
+      [`update${typeName}`]: {
         type: objectType,
         args: {
           where: { type: gen.nonNull(uniqueWhereInput) },
@@ -40,7 +41,7 @@ export const schemaForObject = ({ name, fields, store }: SchemaParams): ObjectSc
         },
         resolve: (_, { where, data }) => table.updateObject(where, data),
       },
-      [`delete${names.typeName}`]: {
+      [`delete${typeName}`]: {
         type: objectType,
         args: {
           where: { type: gen.nonNull(uniqueWhereInput) },
