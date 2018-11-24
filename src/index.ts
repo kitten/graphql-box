@@ -1,6 +1,7 @@
 import { GraphQLSchema, GraphQLObjectType } from 'graphql/type';
 import { AbstractLevelDOWN } from 'abstract-leveldown';
 
+import { makeFields } from './internal';
 import level from './level';
 import { ObjectSchema } from './schema/types';
 import { parseInternalTypes } from './schema/parse';
@@ -16,9 +17,12 @@ export const makeExecutableSchema = (sdl: string, leveldown: AbstractLevelDOWN) 
   const internalTypes = parseInternalTypes(sdl);
 
   const protoSchema = internalTypes.reduce((acc, obj) => {
-    const objSchema = schemaForObject({ obj, store });
-    Object.assign(acc.query, objSchema.query);
-    Object.assign(acc.mutation, objSchema.mutation);
+    const name = obj.name;
+    const fields = makeFields(obj);
+    const { query, mutation } = schemaForObject({ name, fields, store });
+
+    Object.assign(acc.query, query);
+    Object.assign(acc.mutation, mutation);
     return acc;
   }, defaultProtoSchema());
 

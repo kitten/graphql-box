@@ -1,6 +1,6 @@
 import { LevelInterface } from '../level';
+import { FieldDefinition } from '../internal';
 import { makeEncoder } from '../encode';
-import { sanitiseFields } from '../internal/fields';
 import { nextObjectOrNull, closeIter } from './helpers';
 import { genId, gen2DKey, gen3DKey, rangeOfKey } from './keys';
 import { mutexBatchFactory, MutexBatch } from './mutexBatch';
@@ -11,7 +11,6 @@ import AsyncObjectIterator from './AsyncObjectIterator';
 import {
   ObjectLike,
   ObjectTableParams,
-  ObjectFieldDefinition,
   IteratorOptions,
   FieldIndexMap,
   FieldOrdinalMap,
@@ -22,7 +21,7 @@ import {
 class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   name: string;
   store: LevelInterface;
-  fields: ObjectFieldDefinition<K>[];
+  fields: FieldDefinition<K>[];
   fieldsLength: number;
   fieldNames: K[];
   encoderMap: EncoderMap<T>;
@@ -37,7 +36,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     this.mutexBatch = mutexBatchFactory(this.store);
     this.index = {} as FieldIndexMap<T>;
     this.ordinal = {} as FieldOrdinalMap<T>;
-    this.fields = sanitiseFields<T, K>(params.fields);
+    this.fields = params.fields;
     this.fieldsLength = this.fields.length;
     this.fieldNames = new Array(this.fieldsLength);
     this.encoderMap = {} as EncoderMap<T>;
@@ -46,16 +45,16 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     for (let i = 0; i < this.fieldsLength; i++) {
       const field = this.fields[i];
       const fieldName = field.name;
-      const params = {
+      const indexParams = {
         typeName: this.name,
         fieldName: fieldName,
         store: this.store,
       };
 
       if (field.isUnique) {
-        this.index[fieldName] = new ObjectFieldIndex<K>(params);
+        this.index[fieldName] = new ObjectFieldIndex<K>(indexParams);
       } else if (field.isOrdinal) {
-        this.ordinal[fieldName] = new ObjectFieldOrdinal<K>(params);
+        this.ordinal[fieldName] = new ObjectFieldOrdinal<K>(indexParams);
       }
 
       const encoder = makeEncoder(field);

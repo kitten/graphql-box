@@ -5,7 +5,7 @@ import {
   serializeDate,
 } from 'graphql-iso-date/dist/utils/formatter';
 
-import { ObjectFieldDefinition } from '../relational/types';
+import { FieldDefinition } from '../internal';
 
 type Serializer<T> = (val: T) => string;
 type Deserializer<T> = (str: string) => T;
@@ -71,7 +71,7 @@ export interface Encoder<T> {
   deserializer: Deserializer<T>;
 }
 
-export const makeEncoder = <T>(field: ObjectFieldDefinition<any>): Encoder<any> => {
+export const makeEncoder = <T>(field: FieldDefinition): Encoder<any> => {
   if (typeof field.type !== 'string') {
     throw new Error('Relationships in SDL types are currently unsupported');
   }

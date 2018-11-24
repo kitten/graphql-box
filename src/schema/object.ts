@@ -3,17 +3,16 @@ import { genObjectNames } from './names';
 import { SchemaParams, ObjectSchema } from './types';
 import * as gen from './gen';
 
-export const schemaForObject = ({ obj, store }: SchemaParams): ObjectSchema => {
-  const names = genObjectNames(obj);
-  const fieldMap = gen.genFieldMap(obj);
-  const objectType = gen.genObjectType(names, obj, fieldMap);
-  const createInput = gen.genCreateInput(names, obj);
-  const updateInput = gen.genUpdateInput(names, obj);
-  const uniqueWhereInput = gen.genUniqueWhereInput(names, obj);
+export const schemaForObject = ({ name, fields, store }: SchemaParams): ObjectSchema => {
+  const names = genObjectNames(name);
+  const objectType = gen.genObjectType(names, fields);
+  const createInput = gen.genCreateInput(names, fields);
+  const updateInput = gen.genUpdateInput(names, fields);
+  const uniqueWhereInput = gen.genUniqueWhereInput(names, fields);
 
   const table = new ObjectTable({
     name: names.typeName,
-    fields: obj.fields as any,
+    fields,
     store,
   });
 

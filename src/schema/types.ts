@@ -1,9 +1,10 @@
 import { GraphQLFieldConfigMap } from 'graphql/type';
-import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
+import { FieldDefinition } from '../internal';
 import { LevelInterface } from '../level';
 
 export interface SchemaParams {
-  obj: IGQLType;
+  name: string;
+  fields: FieldDefinition[];
   store: LevelInterface;
 }
 

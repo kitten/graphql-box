@@ -1,5 +1,6 @@
 import memdown from 'memdown';
 import level, { LevelInterface } from '../../level';
+import { makeFields } from '../../internal';
 import { genId, gen3DKey } from '../keys';
 import ObjectTable from '../ObjectTable';
 
@@ -12,16 +13,21 @@ type Test = {
 
 const name = 'Test';
 
-const fields = [
-  {
-    name: 'test',
-    type: 'String',
-    isList: false,
-    isRequired: true,
-    isUnique: true,
-    isReadOnly: false,
-  },
-] as any;
+const fields = makeFields({
+  name,
+  isEmbedded: false,
+  isEnum: false,
+  fields: [
+    {
+      name: 'test',
+      type: 'String',
+      isList: false,
+      isRequired: true,
+      isUnique: true,
+      isReadOnly: false,
+    },
+  ] as any,
+}) as any;
 
 describe('level/ObjectTable', () => {
   let store: LevelInterface;
