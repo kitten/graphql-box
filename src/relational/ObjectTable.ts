@@ -5,6 +5,7 @@ import { nextObjectOrNull, closeIter } from './helpers';
 import { genId, gen2DKey, gen3DKey, rangeOfKey } from './keys';
 import { mutexBatchFactory, MutexBatch } from './mutexBatch';
 import ObjectFieldIndex from './ObjectFieldIndex';
+import ObjectFieldOrdinal from './ObjectFieldOrdinal';
 import AsyncObjectIterator from './AsyncObjectIterator';
 
 import {
@@ -13,6 +14,7 @@ import {
   ObjectFieldDefinition,
   IteratorOptions,
   FieldIndexMap,
+  FieldOrdinalMap,
   EncoderMap,
   EncoderList,
 } from './types';
@@ -26,6 +28,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   encoderMap: EncoderMap<T>;
   encoderList: EncoderList<T>;
   index: FieldIndexMap<T>;
+  ordinal: FieldOrdinalMap<T>;
   mutexBatch: MutexBatch;
 
   constructor(params: ObjectTableParams<K>) {
@@ -33,6 +36,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     this.store = params.store;
     this.mutexBatch = mutexBatchFactory(this.store);
     this.index = {} as FieldIndexMap<T>;
+    this.ordinal = {} as FieldOrdinalMap<T>;
     this.fields = sanitiseFields<T, K>(params.fields);
     this.fieldsLength = this.fields.length;
     this.fieldNames = new Array(this.fieldsLength);
@@ -42,12 +46,16 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     for (let i = 0; i < this.fieldsLength; i++) {
       const field = this.fields[i];
       const fieldName = field.name;
+      const params = {
+        typeName: this.name,
+        fieldName: fieldName,
+        store: this.store,
+      };
+
       if (field.isUnique) {
-        this.index[fieldName] = new ObjectFieldIndex<K>({
-          typeName: this.name,
-          fieldName: fieldName,
-          store: this.store,
-        });
+        this.index[fieldName] = new ObjectFieldIndex<K>(params);
+      } else if (field.isOrdinal) {
+        this.ordinal[fieldName] = new ObjectFieldOrdinal<K>(params);
       }
 
       const encoder = makeEncoder(field);
@@ -114,6 +122,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
       let batch = b;
       for (const { name, defaultValue } of this.fields) {
         const index = this.index[name];
+        const ordinal = this.ordinal[name];
         const { serializer } = this.encoderMap[name];
         const fallbackValue = defaultValue === undefined ? null : defaultValue;
         const shouldDefault = !(name in data);
@@ -122,6 +131,8 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
         batch = batch.put(gen3DKey(this.name, id, name), value);
         if (index !== undefined) {
           batch = await index.index(value, id, batch);
+        } else if (ordinal !== undefined) {
+          batch = ordinal.index(value, id, batch);
         }
       }
 
@@ -147,6 +158,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
           data[name] = prev[name];
         } else {
           const index = this.index[name];
+          const ordinal = this.ordinal[name];
           const { serializer } = this.encoderMap[name];
           const prevVal = serializer(prev[name]);
           const input = data[name];
@@ -156,6 +168,8 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
           batch = batch.put(gen3DKey(this.name, id, name), value);
           if (index !== undefined) {
             batch = await index.reindex(prevVal, value, id, batch);
+          } else if (ordinal !== undefined) {
+            batch = ordinal.reindex(prevVal, value, id, batch);
           }
         }
       }
@@ -177,11 +191,16 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     await this.mutexBatch(async b => {
       let batch = b;
       for (const { name } of this.fields) {
-        batch = batch.del(gen3DKey(this.name, id, name));
         const index = this.index[name];
+        const ordinal = this.ordinal[name];
+        const { serializer } = this.encoderMap[name];
+
+        batch = batch.del(gen3DKey(this.name, id, name));
+
         if (index !== undefined) {
-          const { serializer } = this.encoderMap[name];
           batch = index.unindex(serializer(data[name]), id, batch);
+        } else if (ordinal !== undefined) {
+          batch = ordinal.unindex(serializer(data[name]), id, batch);
         }
       }
 
