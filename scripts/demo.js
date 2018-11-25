@@ -8,7 +8,7 @@ type Commit {
   id: ID! @unique
   hash: String! @unique
   message: String
-  meta: JSON!
+  files: [File]!
 }
 
 type File {

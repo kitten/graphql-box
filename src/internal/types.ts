@@ -11,7 +11,7 @@ export type Scalar =
 
 export interface FieldDefinitionParams<K = any> {
   name: K;
-  type: Scalar;
+  type: string;
   defaultValue?: any;
   isSystemField: boolean;
   isList: boolean;
@@ -27,4 +27,11 @@ export type Deserializer<T> = (str: string) => T;
 export interface Encoder<T> {
   serializer: Serializer<T>;
   deserializer: Deserializer<T>;
+}
+
+export enum RelationshipKind {
+  ToOne = 'ToOne',
+  OneToOne = 'OneToOne',
+  OneToMany = 'OneToMany',
+  ManyToMany = 'ManyToMany',
 }

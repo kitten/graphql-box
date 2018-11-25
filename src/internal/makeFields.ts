@@ -1,6 +1,12 @@
 import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
-import { Scalar, FieldDefinitionParams, Serializer, Deserializer } from './types';
-import { isSystemField, systemFieldDefs, toScalar } from './helpers';
+import { Scalar, FieldDefinitionParams, Serializer, Deserializer, RelationshipKind } from './types';
+import {
+  isRelationshipField,
+  isSystemField,
+  systemFieldDefs,
+  toScalar,
+  getRelationshipKind,
+} from './helpers';
 import { makeEncoder } from './encode';
 
 export class FieldDefinition<T = any, K = any> {
@@ -37,13 +43,15 @@ export class FieldDefinition<T = any, K = any> {
 const systemFields = systemFieldDefs.map(params => new FieldDefinition(params));
 
 export const makeFields = <K>(obj: IGQLType): FieldDefinition<K>[] => {
-  const sparseFields = obj.fields.filter(field => !isSystemField(field.name) && !field.isId);
+  const sparseFields = obj.fields.filter(field => {
+    return !isRelationshipField(field.type) && !isSystemField(field.name) && !field.isId;
+  });
 
   // Convert IGQLField to FieldDefinitions
   const objFieldDefinitions = sparseFields.map(field => {
     const def = new FieldDefinition({
       name: field.name,
-      type: toScalar(field.type),
+      type: toScalar(field.type as string),
       defaultValue: field.defaultValue,
       isSystemField: false,
       isList: field.isList,
@@ -56,17 +64,54 @@ export const makeFields = <K>(obj: IGQLType): FieldDefinition<K>[] => {
     return def;
   });
 
-  // Add system fields which were previously filtered
-  const fieldDefinitions = [...systemFields, ...objFieldDefinitions];
-
-  // Sort by name to match the order that fields will be stored in Level
-  return fieldDefinitions.sort((a, b) => {
-    if (a.name < b.name) {
-      return -1;
-    } else if (a.name > b.name) {
-      return 1;
-    } else {
-      return 0;
+  const embeddedRelationshipFields = obj.fields.reduce((acc, field) => {
+    if (typeof field === 'string') {
+      return acc;
     }
-  });
+
+    switch (getRelationshipKind(field)) {
+      // On one-to-one we embed a relationshop field
+      case RelationshipKind.OneToOne:
+        acc.push({
+          name: field.name,
+          type: 'ID',
+          isSystemField: false,
+          isList: false,
+          isRequired: field.isRequired,
+          // When the one-to-one relationship is unidirectional
+          // then this field becomes unique
+          isUnique: !!field.relatedField,
+          // Otherwise it stays a foreign key i.e. ordinal
+          isOrdinal: !field.relatedField,
+          isReadOnly: false,
+        });
+
+        break;
+
+      // For one-to-many only the "one" side receives an embedded field
+      case RelationshipKind.OneToMany:
+        if (!field.isList) {
+          acc.push({
+            name: field.name,
+            type: 'ID',
+            isSystemField: false,
+            isList: false,
+            isRequired: field.isRequired,
+            isUnique: false,
+            isOrdinal: true,
+            isReadOnly: false,
+          });
+        }
+
+        break;
+
+      default:
+        break;
+    }
+
+    return acc;
+  }, []);
+
+  // Add system fields which were previously filtered
+  return [...systemFields, ...objFieldDefinitions, ...embeddedRelationshipFields];
 };

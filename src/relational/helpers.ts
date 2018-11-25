@@ -1,5 +1,5 @@
 import { AbstractIterator } from 'abstract-leveldown';
-import { Deserializer } from '../internal';
+import { FieldDefinition, Deserializer } from '../internal';
 import { ObjectLike } from './types';
 
 export const nextOrNull = (
@@ -45,4 +45,16 @@ export const nextObjectOrNull = async <T extends ObjectLike, K extends keyof T>(
   }
 
   return res;
+};
+
+export const sortFields = <K>(fields: FieldDefinition<K>[]): FieldDefinition<K>[] => {
+  return fields.slice().sort((a, b) => {
+    if (a.name < b.name) {
+      return -1;
+    } else if (a.name > b.name) {
+      return 1;
+    } else {
+      return 0;
+    }
+  });
 };

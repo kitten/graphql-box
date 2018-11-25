@@ -1,7 +1,7 @@
 import { LevelInterface } from '../level';
 import { FieldDefinition, Serializer, Deserializer } from '../internal';
 
-import { nextObjectOrNull, closeIter } from './helpers';
+import { sortFields, nextObjectOrNull, closeIter } from './helpers';
 import { genId, gen2DKey, gen3DKey, rangeOfKey } from './keys';
 import { mutexBatchFactory, MutexBatch } from './mutexBatch';
 import ObjectFieldIndex from './ObjectFieldIndex';
@@ -36,7 +36,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     this.store = params.store;
     this.mutexBatch = mutexBatchFactory(this.store);
 
-    this.fields = params.fields;
+    this.fields = sortFields(params.fields);
     const fieldsLength = (this.fieldsLength = this.fields.length);
     this.fieldNames = new Array(fieldsLength);
 

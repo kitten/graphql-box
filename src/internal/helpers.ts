@@ -1,5 +1,7 @@
-import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
-import { Scalar, FieldDefinitionParams } from './types';
+import { IGQLType, IGQLField } from 'prisma-generate-schema/dist/src/datamodel/model';
+import { Scalar, FieldDefinitionParams, RelationshipKind } from './types';
+
+export const isRelationshipField = (type: string | IGQLType) => typeof type !== 'string';
 
 export const isSystemField = (name: string) =>
   name === 'id' || name === 'createdAt' || name === 'updatedAt';
@@ -40,12 +42,7 @@ export const systemFieldDefs: FieldDefinitionParams[] = [
 ];
 
 // Validate input scalars
-export const toScalar = (type: string | IGQLType): Scalar => {
-  if (typeof type !== 'string') {
-    // TODO
-    throw new Error('Relationship types are unsupported.');
-  }
-
+export const toScalar = (type: string): Scalar => {
   switch (type) {
     case 'Date':
     case 'Time':
@@ -59,5 +56,21 @@ export const toScalar = (type: string | IGQLType): Scalar => {
       return type as Scalar;
     default:
       throw new Error(`Unrecognised scalar of type "${type}".`);
+  }
+};
+
+export const getRelationshipKind = (field: IGQLField): RelationshipKind => {
+  if (!field.isList && !field.relatedField) {
+    return RelationshipKind.ToOne;
+  } else if (!field.isList && field.relatedField && !field.relatedField.isList) {
+    return RelationshipKind.OneToOne;
+  } else if (field.isList && (!field.relatedField || !field.relatedField.isList)) {
+    return RelationshipKind.OneToMany;
+  } else if (!field.isList && field.relatedField && field.relatedField.isList) {
+    return RelationshipKind.OneToMany;
+  } else if (field.isList && field.relatedField && field.relatedField.isList) {
+    return RelationshipKind.ManyToMany;
+  } else {
+    throw new Error(`Invalid relationship on "${field.name}"`);
   }
 };
