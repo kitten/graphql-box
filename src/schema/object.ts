@@ -1,53 +1,80 @@
+import { GraphQLObjectType } from 'graphql/type';
 import { ObjectDefinition } from '../internal';
-import { LevelInterface } from '../level';
-import { ObjectTable } from '../relational';
-import { ObjectSchema } from './types';
-import * as gen from './gen';
+import { ResolverMap } from './ResolverMap';
+import { nonNull } from './scalar';
+import { genFieldConf } from './field';
+import { genCreateInput, genUpdateInput, genUniqueWhereInput } from './input';
+import { genRelationshipFieldConfig } from './relationship';
 
-export const schemaForObject = (obj: ObjectDefinition, store: LevelInterface): ObjectSchema => {
-  const { typeName, fields } = obj;
-  const objectType = gen.genObjectType(typeName, fields);
-  const createInput = gen.genCreateInput(typeName, fields);
-  const updateInput = gen.genUpdateInput(typeName, fields);
-  const uniqueWhereInput = gen.genUniqueWhereInput(typeName, fields);
+const genObjectType = (ctx: ResolverMap, obj: ObjectDefinition) => {
+  const { typeName, fields, relations } = obj;
 
-  const table = new ObjectTable({
+  return new GraphQLObjectType({
     name: typeName,
-    fields,
-    store,
+    fields: () => {
+      const fieldMap = {};
+      for (const field of fields) {
+        const { name } = field;
+        fieldMap[name] = genFieldConf(field);
+      }
+
+      for (const relation of relations) {
+        const { fromFieldName } = relation;
+        const fieldConf = genRelationshipFieldConfig(ctx, obj, relation);
+        fieldMap[fromFieldName] = fieldConf;
+      }
+
+      return fieldMap;
+    },
+  });
+};
+
+export const addObjectResolvers = (ctx: ResolverMap, obj: ObjectDefinition) => {
+  const { typeName, singleName } = obj;
+  const table = ctx.getTable(obj.typeName);
+
+  const getResolver = (_, { where }) => table.findObjectByIndex(where);
+  const createResolver = (_, { data }) => table.createObject(data);
+  const updateResolver = (_, { where, data }) => table.updateObject(where, data);
+  const deleteResolver = (_, { where }) => table.deleteObject(where);
+
+  const objType = genObjectType(ctx, obj);
+  const createInput = genCreateInput(obj);
+  const updateInput = genUpdateInput(obj);
+  const uniqueWhereInput = genUniqueWhereInput(obj);
+
+  ctx.addObjectType(typeName, objType);
+
+  ctx.addField('Query', singleName, {
+    type: objType,
+    args: {
+      where: { type: nonNull(uniqueWhereInput) },
+    },
+    resolve: getResolver,
   });
 
-  return {
-    query: {
-      [obj.singleName]: {
-        type: objectType,
-        args: {
-          where: { type: gen.nonNull(uniqueWhereInput) },
-        },
-        resolve: async (_, { where }) => table.findObjectByIndex(where),
-      },
+  ctx.addField('Mutation', `create${typeName}`, {
+    type: objType,
+    args: {
+      data: { type: nonNull(createInput) },
     },
-    mutation: {
-      [`create${typeName}`]: {
-        type: objectType,
-        args: { data: { type: gen.nonNull(createInput) } },
-        resolve: (_, { data }) => table.createObject(data),
-      },
-      [`update${typeName}`]: {
-        type: objectType,
-        args: {
-          where: { type: gen.nonNull(uniqueWhereInput) },
-          data: { type: gen.nonNull(updateInput) },
-        },
-        resolve: (_, { where, data }) => table.updateObject(where, data),
-      },
-      [`delete${typeName}`]: {
-        type: objectType,
-        args: {
-          where: { type: gen.nonNull(uniqueWhereInput) },
-        },
-        resolve: (_, { where, data }) => table.deleteObject(where),
-      },
+    resolve: createResolver,
+  });
+
+  ctx.addField('Mutation', `update${typeName}`, {
+    type: objType,
+    args: {
+      where: { type: nonNull(uniqueWhereInput) },
+      data: { type: nonNull(updateInput) },
     },
-  };
+    resolve: updateResolver,
+  });
+
+  ctx.addField('Mutation', `delete${typeName}`, {
+    type: objType,
+    args: {
+      where: { type: nonNull(uniqueWhereInput) },
+    },
+    resolve: deleteResolver,
+  });
 };

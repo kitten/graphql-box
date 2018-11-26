@@ -12,6 +12,7 @@ import {
   ObjectLike,
   ObjectTableParams,
   IteratorOptions,
+  FieldEncoderMap,
   FieldIndexMap,
   FieldOrdinalMap,
 } from './types';
@@ -28,6 +29,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
   encoders: Serializer<T[K]>[];
   decoders: Deserializer<T[K]>[];
 
+  encoderMap: FieldEncoderMap<T>;
   index: FieldIndexMap<T>;
   ordinal: FieldOrdinalMap<T>;
 
@@ -43,6 +45,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     this.encoders = new Array(fieldsLength);
     this.decoders = new Array(fieldsLength);
 
+    this.encoderMap = {} as FieldEncoderMap<T>;
     this.index = {} as FieldIndexMap<T>;
     this.ordinal = {} as FieldOrdinalMap<T>;
 
@@ -52,6 +55,7 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
 
       this.encoders[i] = field.encode;
       this.decoders[i] = field.decode;
+      this.encoderMap[fieldName] = field.encode;
 
       const indexParams = {
         typeName: this.name,
@@ -119,6 +123,19 @@ class ObjectTable<T extends ObjectLike, K extends keyof T = keyof T> {
     }
 
     return await this.getObject(id);
+  }
+
+  async findObjectsByOrdinal(fieldName: K, where: T[K]): Promise<T[]> {
+    const ordinal = this.ordinal[fieldName];
+    const encoder = this.encoderMap[fieldName];
+    const value = encoder(where);
+    const iterator = ordinal.iterator(value);
+    const res = [];
+    for await (const id of iterator) {
+      res.push(await this.getObject(id));
+    }
+
+    return res;
   }
 
   async createObject(data: Partial<T>): Promise<T> {

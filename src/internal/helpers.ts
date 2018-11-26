@@ -1,7 +1,5 @@
-import { IGQLType, IGQLField } from 'prisma-generate-schema/dist/src/datamodel/model';
+import { IGQLField } from 'prisma-generate-schema/dist/src/datamodel/model';
 import { Scalar, FieldDefinitionParams, RelationshipKind } from './types';
-
-export const isRelationshipField = (type: string | IGQLType) => typeof type !== 'string';
 
 export const isSystemField = (name: string) =>
   name === 'id' || name === 'createdAt' || name === 'updatedAt';

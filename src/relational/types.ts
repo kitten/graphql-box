@@ -1,5 +1,5 @@
 import { AbstractIterator } from 'abstract-leveldown';
-import { FieldDefinition } from '../internal';
+import { FieldDefinition, Serializer } from '../internal';
 import { LevelInterface } from '../level';
 import ObjectFieldIndex from './ObjectFieldIndex';
 import ObjectFieldOrdinal from './ObjectFieldOrdinal';
@@ -35,5 +35,6 @@ export interface IteratorOptions {
   limit?: number;
 }
 
+export type FieldEncoderMap<T extends ObjectLike> = { [K in keyof T]?: Serializer<T[K]> };
 export type FieldIndexMap<T extends ObjectLike> = { [K in keyof T]?: ObjectFieldIndex<K> };
 export type FieldOrdinalMap<T extends ObjectLike> = { [K in keyof T]?: ObjectFieldOrdinal<K> };

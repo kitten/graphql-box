@@ -3,7 +3,13 @@ import { capitalize } from 'prisma-generate-schema/dist/src/util/util';
 import { makeObject, combineTypeNames, ObjectDefinition } from './makeObject';
 import { makeRelationship, RelationshipDefinition } from './makeRelationship';
 
-export const makeSchema = (sdl: string): ObjectDefinition[] => {
+export interface SchemaDefinition {
+  objects: ObjectDefinition[];
+  objByName: Record<string, ObjectDefinition>;
+  relationsByName: Record<string, RelationshipDefinition>;
+}
+
+export const makeSchemaDefinition = (sdl: string): SchemaDefinition => {
   const internalTypes = new RelationalParser().parseFromSchemaString(sdl);
   const objects = internalTypes.map(obj => makeObject(obj)).filter(obj => obj !== null);
 
@@ -38,5 +44,9 @@ export const makeSchema = (sdl: string): ObjectDefinition[] => {
     }
   }
 
-  return objects;
+  return {
+    objects,
+    objByName,
+    relationsByName,
+  };
 };

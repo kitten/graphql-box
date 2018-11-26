@@ -1,5 +1,7 @@
 import {
   getNullableType,
+  GraphQLNonNull,
+  GraphQLList,
   GraphQLID,
   GraphQLInt,
   GraphQLFloat,
@@ -13,7 +15,7 @@ import { GraphQLDate, GraphQLTime, GraphQLDateTime } from 'graphql-iso-date';
 const NullableDate = getNullableType(GraphQLDate);
 const NullableTime = getNullableType(GraphQLTime);
 const NullableDateTime = getNullableType(GraphQLDateTime);
-const NullableID = getNullableType(GraphQLID);
+export const NullableID = getNullableType(GraphQLID);
 const NullableJSON = getNullableType(GraphQLJSON);
 
 export const getScalarForString = (scalarType: string) => {
@@ -40,3 +42,6 @@ export const getScalarForString = (scalarType: string) => {
       throw new Error(`Unspecified scalar type "${scalarType}" found`);
   }
 };
+
+export const nonNull = x => new GraphQLNonNull(x);
+export const list = x => new GraphQLList(nonNull(x));

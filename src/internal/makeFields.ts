@@ -1,13 +1,8 @@
 import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
-import { Scalar, FieldDefinitionParams, Serializer, Deserializer, RelationshipKind } from './types';
-import {
-  isRelationshipField,
-  isSystemField,
-  systemFieldDefs,
-  toScalar,
-  getRelationshipKind,
-} from './helpers';
+import { Scalar, FieldDefinitionParams, Serializer, Deserializer } from './types';
 import { makeEncoder } from './encode';
+
+import { isSystemField, systemFieldDefs, toScalar } from './helpers';
 
 export class FieldDefinition<T = any, K = any> {
   name: K;
@@ -44,7 +39,7 @@ const systemFields = systemFieldDefs.map(params => new FieldDefinition(params));
 
 export const makeFields = <K>(obj: IGQLType): FieldDefinition<K>[] => {
   const sparseFields = obj.fields.filter(field => {
-    return !isRelationshipField(field.type) && !isSystemField(field.name) && !field.isId;
+    return typeof field.type === 'string' && !isSystemField(field.name) && !field.isId;
   });
 
   // Convert IGQLField to FieldDefinitions
@@ -64,54 +59,6 @@ export const makeFields = <K>(obj: IGQLType): FieldDefinition<K>[] => {
     return def;
   });
 
-  const embeddedRelationshipFields = obj.fields.reduce((acc, field) => {
-    if (typeof field === 'string') {
-      return acc;
-    }
-
-    switch (getRelationshipKind(field)) {
-      // On one-to-one we embed a relationshop field
-      case RelationshipKind.OneToOne:
-        acc.push({
-          name: field.name,
-          type: 'ID',
-          isSystemField: false,
-          isList: false,
-          isRequired: field.isRequired,
-          // When the one-to-one relationship is unidirectional
-          // then this field becomes unique
-          isUnique: !!field.relatedField,
-          // Otherwise it stays a foreign key i.e. ordinal
-          isOrdinal: !field.relatedField,
-          isReadOnly: false,
-        });
-
-        break;
-
-      // For one-to-many only the "one" side receives an embedded field
-      case RelationshipKind.OneToMany:
-        if (!field.isList) {
-          acc.push({
-            name: field.name,
-            type: 'ID',
-            isSystemField: false,
-            isList: false,
-            isRequired: field.isRequired,
-            isUnique: false,
-            isOrdinal: true,
-            isReadOnly: false,
-          });
-        }
-
-        break;
-
-      default:
-        break;
-    }
-
-    return acc;
-  }, []);
-
   // Add system fields which were previously filtered
-  return [...systemFields, ...objFieldDefinitions, ...embeddedRelationshipFields];
+  return [...systemFields, ...objFieldDefinitions];
 };

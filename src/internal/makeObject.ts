@@ -1,5 +1,6 @@
 import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
 import { camelCase, capitalize, plural } from 'prisma-generate-schema/dist/src/util/util';
+import { ObjectTable } from '../relational';
 import { makeFields, FieldDefinition } from './makeFields';
 import { RelationshipDefinition } from './makeRelationship';
 
@@ -9,6 +10,7 @@ export class ObjectDefinition<K = any> {
   multiName: string;
   fields: FieldDefinition<K>[];
   relations: RelationshipDefinition[];
+  table?: ObjectTable<any, any>;
 
   constructor(obj: IGQLType) {
     const { name, isEnum } = obj;
