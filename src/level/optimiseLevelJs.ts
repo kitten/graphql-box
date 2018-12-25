@@ -4,8 +4,8 @@ function identity<T>(arg: T): T {
   return arg;
 }
 
-// gqlvl guarantees stringified keys and values, so this
-// gets rid of level-js' default serialisation
+// We only store string keys and values
+// So we can replace the serialize functions on level-js
 export function optimiseLevelJs(db: AbstractLevelDOWN): AbstractLevelDOWN {
   const obj = db as any;
 
