@@ -1,7 +1,7 @@
 {
   "name": "graphql-box",
-  "version": "0.1.0-alpha.5",
-  "description": "Easily spin up a Prisma-like GraphQL ORM on top of any leveldown store 🎚️",
+  "version": "0.1.0",
+  "description": "[WIP] Instant GraphQL OpenCRUD database that is universally runnable & deployable",
   "main": "graphql-box.js",
   "module": "graphql-box.es.js",
   "umd:main": "graphql-box.umd.js",
