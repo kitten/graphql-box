@@ -1,5 +1,4 @@
-import RelationalParser from 'prisma-generate-schema/dist/src/datamodel/relationalParser';
-import { capitalize } from 'prisma-generate-schema/dist/src/util/util';
+import { Parser, DatabaseType, capitalize } from 'prisma-datamodel';
 import { makeObject, combineTypeNames, ObjectDefinition } from './makeObject';
 import { makeRelationship, RelationshipDefinition } from './makeRelationship';
 
@@ -10,7 +9,8 @@ export interface SchemaDefinition {
 }
 
 export const makeSchemaDefinition = (sdl: string): SchemaDefinition => {
-  const internalTypes = new RelationalParser().parseFromSchemaString(sdl);
+  const output = Parser.create(DatabaseType.postgres).parseFromSchemaString(sdl);
+  const { types: internalTypes } = output;
   const objects = internalTypes.map(obj => makeObject(obj)).filter(obj => obj !== null);
 
   const objByName: Record<string, ObjectDefinition> = objects.reduce((acc, obj) => {

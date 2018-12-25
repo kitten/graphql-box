@@ -1,4 +1,4 @@
-import { IGQLField } from 'prisma-generate-schema/dist/src/datamodel/model';
+import { IGQLField } from 'prisma-datamodel';
 import { Scalar, FieldDefinitionParams, RelationshipKind } from './types';
 
 export const isSystemField = (name: string) =>

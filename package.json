@@ -40,7 +40,7 @@
     "deferred-leveldown": "^4.0.2",
     "graphql-iso-date": "^3.6.1",
     "graphql-type-json": "^0.2.1",
-    "prisma-generate-schema": "1.20.4"
+    "prisma-datamodel": "1.23.2"
   },
   "peerDependencies": {
     "graphql": "^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0"

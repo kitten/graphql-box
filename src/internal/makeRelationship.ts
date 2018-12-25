@@ -1,4 +1,4 @@
-import { IGQLField } from 'prisma-generate-schema/dist/src/datamodel/model';
+import { IGQLField } from 'prisma-datamodel';
 import { ObjectDefinition } from './makeObject';
 import { FieldDefinition } from './makeFields';
 import { RelationshipKind } from './types';

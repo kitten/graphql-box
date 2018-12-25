@@ -4486,7 +4486,7 @@ node-abi@^2.2.0:
   dependencies:
     semver "^5.4.1"
 
-node-fetch@^2.1.2, node-fetch@^2.2.0, node-fetch@^2.2.1:
+node-fetch@^2.1.2, node-fetch@^2.2.0:
   version "2.3.0"
   resolved "https://registry.npmjs.org/node-fetch/-/node-fetch-2.3.0.tgz#1a1d940bbfb916a1d3e0219f037e89e71f8c5fa5"
   integrity sha512-MOd8pV3fxENbryESLgVIeaGKrdl+uaYhCSSVkjeOb/31/njTpcis5aWfdqgNlHIrKOLRbMnfPINPOML2CIFeXA==
@@ -5665,13 +5665,12 @@ pretty-format@^23.6.0:
     ansi-regex "^3.0.0"
     ansi-styles "^3.2.0"
 
-prisma-generate-schema@1.20.4:
-  version "1.20.4"
-  resolved "https://registry.npmjs.org/prisma-generate-schema/-/prisma-generate-schema-1.20.4.tgz#d13f2bd0475e59a95a89b67a83358fe24f0471c5"
-  integrity sha512-o7JPEcv2zu2uAIj0hgUdQ+oWR2tKU49nDu6rO0BUR5RYAMbcR+BqS1mchAoWpNGX8nhZqDqHQ524WyWZu7pr3A==
+prisma-datamodel@1.23.2:
+  version "1.23.2"
+  resolved "https://registry.npmjs.org/prisma-datamodel/-/prisma-datamodel-1.23.2.tgz#e29f8d7e409594e248df330e617b31d8089d2b6d"
+  integrity sha512-q3c5+EcO4/t7bFnDTc4WBPjocJnE/kmvNHcvHQWyd2CMjbkFWk3OA3viKss+J6//bsb10zRsi4Vu4CZdwHmIgw==
   dependencies:
     graphql "^14.0.2"
-    node-fetch "^2.2.1"
     pluralize "^7.0.0"
     popsicle "10"
 

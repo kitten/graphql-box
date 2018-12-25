@@ -1,5 +1,4 @@
-import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
-import { camelCase, capitalize, plural } from 'prisma-generate-schema/dist/src/util/util';
+import { IGQLType, camelCase, capitalize, plural } from 'prisma-datamodel';
 import { ObjectTable } from '../relational';
 import { makeFields, FieldDefinition } from './makeFields';
 import { RelationshipDefinition } from './makeRelationship';

@@ -1,4 +1,4 @@
-import { IGQLType } from 'prisma-generate-schema/dist/src/datamodel/model';
+import { IGQLType } from 'prisma-datamodel';
 import { Scalar, FieldDefinitionParams, Serializer, Deserializer } from './types';
 import { makeEncoder } from './encode';
 
