@@ -1,10 +1,5 @@
 import { GraphQLObjectType } from 'graphql/type';
-import {
-  ObjectDefinition,
-  RelationshipDefinition,
-  RelationshipKind,
-  RelationFieldParams,
-} from '../internal';
+import { RelationshipDefinition, RelationshipKind, RelationFieldParams } from '../internal';
 import { ObjectTable } from '../relational';
 import { ResolverMap } from './ResolverMap';
 import { nonNull, list } from './scalar';
@@ -34,11 +29,10 @@ const genRelationFieldType = (relatedObjType: GraphQLObjectType, field: Relation
 
 export const genRelationshipFieldConfig = (
   ctx: ResolverMap,
-  obj: ObjectDefinition,
+  field: RelationFieldParams,
   relation: RelationshipDefinition
 ): FieldConfig => {
   const { kind } = relation;
-  const field = relation.getSelfField(obj);
   const { relatedDefinition, fieldName, relatedFieldName, isList } = field;
   const relatedTable = ctx.getTable(relatedDefinition.typeName);
   const relatedObjType = ctx.getObjectType(relatedDefinition.typeName);

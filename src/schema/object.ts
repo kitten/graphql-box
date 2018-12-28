@@ -3,7 +3,7 @@ import { ObjectDefinition } from '../internal';
 import { ResolverMap } from './ResolverMap';
 import { nonNull } from './scalar';
 import { genFieldConf } from './field';
-import { genCreateInput, genUpdateInput, genUniqueWhereInput } from './input';
+import { genCreateInput, genUpdateInput, genUniqueWhereInput, genConnectionInput } from './input';
 import { genRelationshipFieldConfig } from './relationship';
 
 const genObjectType = (ctx: ResolverMap, obj: ObjectDefinition) => {
@@ -19,9 +19,9 @@ const genObjectType = (ctx: ResolverMap, obj: ObjectDefinition) => {
       }
 
       for (const relation of relations) {
-        const { fromFieldName } = relation;
-        const fieldConf = genRelationshipFieldConfig(ctx, obj, relation);
-        fieldMap[fromFieldName] = fieldConf;
+        const field = relation.getSelfField(obj);
+        const fieldConf = genRelationshipFieldConfig(ctx, field, relation);
+        fieldMap[field.fieldName] = fieldConf;
       }
 
       return fieldMap;
@@ -39,11 +39,13 @@ export const addObjectResolvers = (ctx: ResolverMap, obj: ObjectDefinition) => {
   const deleteResolver = (_, { where }) => table.deleteObject(where);
 
   const objType = genObjectType(ctx, obj);
-  const createInput = genCreateInput(obj);
-  const updateInput = genUpdateInput(obj);
   const uniqueWhereInput = genUniqueWhereInput(obj);
+  const createInput = genCreateInput(ctx, obj);
+  const updateInput = genUpdateInput(ctx, obj);
+  const connectionInput = genConnectionInput(obj, uniqueWhereInput, createInput);
 
   ctx.addObjectType(typeName, objType);
+  ctx.addConnectionInput(typeName, connectionInput);
 
   ctx.addField('Query', singleName, {
     type: objType,

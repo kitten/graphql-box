@@ -1,25 +1,30 @@
-import { GraphQLObjectType } from 'graphql/type';
+import { GraphQLObjectType, GraphQLInputObjectType } from 'graphql/type';
 import { LevelInterface } from '../level';
 import { ObjectTable } from '../relational';
 import { SchemaDefinition } from '../internal';
-import { FieldResolverMap, ResolverTypeName, ObjectTypeMap, FieldConfig } from './types';
+import {
+  FieldResolverMap,
+  ResolverTypeName,
+  InputObjectTypeMap,
+  ObjectTypeMap,
+  FieldConfig,
+} from './types';
 
 export class ResolverMap {
   store: LevelInterface;
   schema: SchemaDefinition;
   tableByName: Record<string, ObjectTable<any, any>>;
-  resolvers: FieldResolverMap;
-  objectTypes: ObjectTypeMap;
+
+  objectTypes: ObjectTypeMap = {};
+  connectionInputs: InputObjectTypeMap = {};
+  resolvers: FieldResolverMap = {
+    Query: {},
+    Mutation: {},
+  };
 
   constructor(store: LevelInterface, schema: SchemaDefinition) {
     this.store = store;
     this.schema = schema;
-    this.objectTypes = {};
-
-    this.resolvers = {
-      Query: {},
-      Mutation: {},
-    };
 
     this.tableByName = schema.objects.reduce((acc, obj) => {
       acc[obj.typeName] = new ObjectTable({
@@ -50,5 +55,13 @@ export class ResolverMap {
 
   getObjectType(typeName: string) {
     return this.objectTypes[typeName];
+  }
+
+  addConnectionInput(typeName: string, inputType: GraphQLInputObjectType) {
+    this.connectionInputs[typeName] = inputType;
+  }
+
+  getConnectionInput(typeName: string) {
+    return this.connectionInputs[typeName];
   }
 }

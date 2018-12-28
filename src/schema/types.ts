@@ -1,4 +1,10 @@
-import { GraphQLFieldResolver, GraphQLFieldConfig, GraphQLObjectType } from 'graphql/type';
+import {
+  GraphQLFieldResolver,
+  GraphQLFieldConfig,
+  GraphQLInputObjectType,
+  GraphQLObjectType,
+} from 'graphql/type';
+
 import { LevelInterface } from '../level';
 import { ObjectDefinition } from '../internal';
 
@@ -13,3 +19,4 @@ export type ObjectResolverMap = Record<string, FieldConfig>;
 export type ResolverTypeName = 'Query' | 'Mutation';
 export type FieldResolverMap = Record<ResolverTypeName, ObjectResolverMap>;
 export type ObjectTypeMap = Record<string, GraphQLObjectType>;
+export type InputObjectTypeMap = Record<string, GraphQLInputObjectType>;
